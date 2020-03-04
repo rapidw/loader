@@ -1,0 +1,89 @@
+syntax = "proto3";
+option java_package = "io.rapidw.loader.common.gen";
+
+import "google/protobuf/timestamp.proto";
+
+service LoaderService {
+    rpc LoaderChat (stream SupervisorMessage) returns (stream MasterMessage);
+}
+
+message SupervisorMessage {
+    oneof message_oneof {
+        RegisterReq register_req = 1;
+        LoadResp load_resp = 2;
+        SupervisorConfigResp supervisor_config_resp = 3;
+        AgentConfigResp agent_config_resp = 4;
+        Reports reports = 5;
+        Log log = 6;
+    }
+}
+
+message RegisterReq {
+
+}
+
+message LoadResp {
+
+}
+
+message SupervisorConfigResp {
+
+}
+
+message AgentConfigResp {
+
+}
+
+message Reports {
+    repeated Report report = 1;
+}
+
+message Report {
+    enum Status {
+        SUCCESS = 0;
+        ERROR = 1;
+        TIMEOUT = 2;
+    }
+    google.protobuf.Timestamp startTime = 1;
+    google.protobuf.Timestamp finishTime = 2;
+    Status status = 3;
+}
+
+message Log {
+
+}
+
+// -----------------------------------------------
+
+message MasterMessage {
+    oneof message_oneof {
+        RegisterResp register_resp = 1;
+        LoadReq load_req = 2;
+        SupervisorConfigReq supervisor_config_req = 3;
+        AgentConfigReq agent_config_req = 4;
+        StartReq start_req = 5;
+    }
+}
+
+message RegisterResp {
+
+}
+
+message LoadReq {
+    bytes data = 1;
+}
+
+message SupervisorConfigReq {
+    int32 per_agent_total_limit = 1;
+    int32 duration_limit = 2; //second
+    int32 rps_limit = 3;
+}
+
+message AgentConfigReq {
+    bytes agentParamsBytes = 1;
+    bytes agentConfigBytes = 2;
+}
+
+message StartReq {
+
+}

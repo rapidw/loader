@@ -1,0 +1,23 @@
+.settings
+node_modules
+dist
+/.vscode
+
+/coverage
+.idea
+yarn.lock
+package-lock.json
+*bak
+
+.history
+*.log
+functions/*
+.temp/**
+
+# screenshot
+screenshot
+.firebase
+.eslintcache
+
+src/pages/.umi
+src/pages/.umi-production

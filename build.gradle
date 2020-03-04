@@ -1,0 +1,306 @@
+plugins {
+    id "com.dorongold.task-tree" version "1.5" apply false
+    id "com.github.ben-manes.versions" version "0.27.0" apply false
+    id "com.github.node-gradle.node" version "2.2.2" apply false
+    id "org.springframework.boot" version "2.2.2.RELEASE" apply false
+    id "com.google.protobuf" version "0.8.11" apply false
+    id "io.freefair.lombok" version "5.0.0-rc2" apply false
+    id "net.researchgate.release" version "2.8.1" apply false
+    id "com.jfrog.bintray" version "1.8.4" apply false
+}
+
+def String getProp(String name) {
+    if (hasProperty(name)) {
+        return properties[name]
+    } else {
+        String env = System.getenv('some_prop')
+        if (env != null) {
+            return env
+        } else {
+            return ""
+        }
+    }
+}
+
+allprojects {
+    group = 'io.rapidw.loader'
+//    apply plugin: "idea"
+}
+
+subprojects {
+    ext {
+        slf4jVersion = '1.7.30'
+        logbackVersion = '1.2.3'
+        grpcVersion = '1.27.1'
+        guavaVersion = '28.1-jre'
+        commonsLangVersion = '3.9'
+        commonsMathVersion = '3.6.1'
+        commonsIoVersion = '2.6'
+
+        url = "https://github.com/rapidw/loader"
+        vcsUrl = "${url}.git"
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
+project(":common") {
+
+    apply plugin: 'java-library'
+    apply plugin: 'io.freefair.lombok'
+    apply plugin: 'com.google.protobuf'
+
+    dependencies {
+        implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+        implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+
+        api "io.grpc:grpc-netty-shaded:${grpcVersion}"
+        api "io.grpc:grpc-protobuf:${grpcVersion}"
+        api "io.grpc:grpc-stub:${grpcVersion}"
+
+        if (JavaVersion.current().isJava9Compatible()) {
+            // Workaround for @javax.annotation.Generated
+            // see: https://github.com/grpc/grpc-java/issues/3633
+            implementation "javax.annotation:javax.annotation-api:1.3.2"
+        }
+    }
+
+    protobuf {
+        protoc {
+            artifact = "com.google.protobuf:protoc:3.11.4"
+        }
+        plugins {
+            grpc {
+                artifact = 'io.grpc:protoc-gen-grpc-java:1.27.1'
+            }
+        }
+
+        generateProtoTasks {
+            all()*.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+project(":api") {
+
+    apply plugin: 'java-library'
+    apply plugin: 'signing'
+    apply plugin: 'maven-publish'
+    apply plugin: 'io.freefair.lombok'
+    apply plugin: 'net.researchgate.release'
+    apply plugin: "com.jfrog.bintray"
+
+    ext {
+        description = 'Rapidw Loader API'
+    }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                artifact sourcesJar
+                artifact javadocJar
+
+                pom {
+                    name = "${rootProject.name} ${project.name}"
+                    description = project.description
+                    url = url
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            name = 'pvtyuan'
+                            email = 'pvtyuan@foxmail.com'
+                        }
+                    }
+
+                    scm {
+                        connection = "scm:git:${project.vcsUrl}"
+                        developerConnection = "scm:git:${project.vcsUrl}"
+                        url = url
+                    }
+                }
+            }
+        }
+    }
+    release {
+        failOnUnversionedFiles = false
+        pushReleaseVersionBranch = "master"
+    }
+
+    bintray {
+        user = getProp("bintrayUser")
+        key = getProp("bintrayKey")
+
+        publish = true
+        override = true
+
+        pkg {
+            repo = 'maven'
+            name = project.name
+            licenses = ['Apache-2.0']
+            vcsUrl = project.vcsUrl
+
+            version {
+                name = project.version
+
+                gpg {
+                    sign = true
+                    passphrase = getProp("signing.password")
+                }
+
+                mavenCentralSync {
+                    sync = true
+                    user = getProp("nexusUsername")
+                    password = getProp("nexusPassword")
+                    close = '1'
+                }
+            }
+        }
+
+        publications = ["mavenJava"]
+    }
+}
+
+project(":master") {
+
+    apply plugin: 'java'
+    apply plugin: 'application'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'io.freefair.lombok'
+
+    dependencies {
+
+        implementation project(':common')
+        implementation project(':api')
+        implementation project(":fe")
+
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+        implementation "org.apache.commons:commons-math3:${commonsMathVersion}"
+        implementation "commons-io:commons-io:${commonsIoVersion}"
+        implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
+
+        annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    }
+
+    javadoc {
+        source = sourceSets.main.delombokTask
+    }
+
+    mainClassName = 'io.rapidw.loader.master.App'
+}
+
+project(":fe") {
+    apply plugin: "base"
+    apply plugin: "com.github.node-gradle.node"
+
+    node {
+        version = '12.16.1'
+    }
+
+    task bundle(type: NpmTask) {
+        dependsOn npmInstall
+        npmCommand = ['run', 'build']
+
+        inputs.files('package.json', 'tsconfig.json', '.editorconfig', ".eslintignore", ".eslintrc.js",
+            ".prettierignore", ".prettierrc.js", ".stylelintrc.js", "jest.config.js", "jest-puppeteer.config.js");
+        inputs.dir("config")
+        inputs.dir("public")
+        inputs.dir(fileTree("src").exclude("pages/.umi/**"))
+        inputs.dir("mock")
+        inputs.dir("tests")
+
+        outputs.dir("dist")
+    }
+
+    task copy(type: Copy) {
+        inputs.dir("dist")
+        outputs.dir("${project(':master').sourceSets.main.output.resourcesDir}")
+
+        from("dist")
+        into "${project(':master').sourceSets.main.output.resourcesDir}"
+    }
+    build.dependsOn bundle
+    build.dependsOn copy
+    copy.mustRunAfter bundle
+}
+
+project(":supervisor") {
+    apply plugin: 'java'
+    apply plugin: 'application'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'io.freefair.lombok'
+
+    dependencies {
+        implementation project(':common')
+        implementation project(':api')
+
+        implementation 'org.springframework.boot:spring-boot-starter'
+        annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+        implementation "org.apache.commons:commons-math3:${commonsMathVersion}"
+        implementation "commons-io:commons-io:${commonsIoVersion}"
+        implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
+        implementation "com.google.guava:guava:${guavaVersion}"
+    }
+
+    javadoc {
+        source = sourceSets.main.delombokTask
+    }
+
+    mainClassName = 'io.rapidw.loader.supervisor.App'
+}
+
+project(":demo") {
+    apply plugin: "java-library"
+    apply plugin: "io.freefair.lombok"
+
+    dependencies {
+        implementation project(":api")
+
+        implementation "io.rapidw.mqtt:rapidw-mqtt-client:0.0.8"
+    }
+}
+
+subprojects {
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+
+    tasks.withType(Test) {
+        useJUnitPlatform()
+    }
+
+    tasks.withType(Javadoc) {
+        options {
+            encoding = 'UTF-8'
+            locale 'en_US'
+            jFlags '-Duser.language=en_US'
+        }
+
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
+    }
+}
