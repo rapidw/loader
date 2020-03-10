@@ -56,9 +56,10 @@ const AgentList: React.FC = () => {
       <Card>
         <div>
           <div style={{ marginBottom: 16 }}>
-            <Button type="primary" onClick={start} disabled={!hasSelected} loading={loading}>
+            <Button onClick={start} disabled={!hasSelected} loading={loading}>
               Reload
             </Button>
+            <Button type="primary" style={{marginLeft:"20px"}}>Add Agent</Button>
             <span style={{ marginLeft: 8 }}>
             {hasSelected ? `Selected ${selectedRowKeys.length} items` : ''}
           </span>

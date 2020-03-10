@@ -1,77 +1,38 @@
 import React, {useEffect, useReducer, useRef, useState} from "react";
-import {Card, Col, Divider, Row, Statistic, Tabs, Typography, Descriptions, Badge} from "antd";
+import {Badge, Card, Col, Collapse, Descriptions, Divider, Row, Statistic, Tabs, Typography} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
-import ReactJson from "react-json-view";
 import {LazyLog} from "react-lazylog";
-import {Axis, Chart, Geom, Tooltip, Legend } from "bizcharts";
-import set = Reflect.set;
+import {Axis, Chart, Geom, Legend, Tooltip} from "bizcharts";
+import ReactJson from 'react-json-view';
+import useDimensions from "react-use-dimensions";
+import moment from "moment";
+// import useComponentSize from '@rehooks/component-size'
 
 
-const {TabPane} = Tabs;
+
+const {Panel} = Collapse;
 const {Title} = Typography;
 
 const Dashboard: React.FC = () => {
   const url = 'https://gist.githubusercontent.com/helfi92/96d4444aa0ed46c5f9060a789d316100/raw/ba0d30a9877ea5cc23c7afcd44505dbc2bab1538/typical-live_backing.log';
 
-  const [masterOptions, setMasterOptions] = useState<any>({"test": 123, "test1": "value"})
+  const [taskStatus, setTaskStatus] = useState({status: "processing", text: "IDLE"})
 
-  const data = [
-    {
-      year: "1991",
-      value: 3
-    },
-    {
-      year: "1992",
-      value: 4
-    },
-    {
-      year: "1993",
-      value: 3.5
-    },
-    {
-      year: "1994",
-      value: 5
-    },
-    {
-      year: "1995",
-      value: 4.9
-    },
-    {
-      year: "1996",
-      value: 6
-    },
-    {
-      year: "1997",
-      value: 7
-    },
-    {
-      year: "1998",
-      value: 9
-    },
-    {
-      year: "1999",
-      value: 13
-    }
-  ];
-  const cols = {
-    value: {
-      min: 0
-    },
-    year: {
-      range: [0, 1]
-    }
-  };
+  const startTime = 1583596696795;
+  const finishTime = 1583596717807;
+  const timeFormat = "YYYY-MM-DD HH:mm:ss";
 
-  const scale = {
+  const throughputScale = {
     time: {
-      alias: "时间",
+      alias: "Time",
       type: "time",
       mask: "MM:ss",
       tickCount: 10,
       nice: false
     },
-    temperature: {
-      alias: "平均温度(°C)",
+    qps: {
+      alias: "QPS",
+      type: "linear",
       min: 10,
       max: 35
     },
@@ -80,11 +41,25 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // const [data2, setData2] = useState<any>([]);
+  const artScale = {
+    time: {
+      alias: "Time",
+      type: "time",
+      mask: "MM:ss",
+      tickCount: 10,
+      nice: false
+    },
+    art: {
+      alias: "ms",
+      type: "linear",
+      min: 10,
+      max: 35
+    },
+  };
 
-  const red = (state, action) => {
+  const red = (state: any, action: any) => {
     switch (action.type) {
-      case "incr":
+      case "incrThrough":
         let now = new Date();
         let time = now.getTime();
         let temperature1 = ~~(Math.random() * 5) + 22;
@@ -101,29 +76,66 @@ const Dashboard: React.FC = () => {
 
         newdata.push({
           time: time,
-          temperature: temperature1,
-          type: "记录1"
+          qps: temperature1,
+          type: "Total",
         });
         newdata.push({
           time: time,
-          temperature: temperature2,
-          type: "记录2"
+          qps: temperature2,
+          type: "Error",
         });
         return newdata;
+      case "incrArt":
+        let now1 = new Date();
+        let time1 = now1.getTime();
+        let art1 = ~~(Math.random() * 5) + 22;
+
+        let newdata1 = [...state];
+        if (newdata1.length >= 200) {
+          newdata1.shift();
+        }
+
+        newdata1.push({
+          time: time1,
+          art: art1,
+          type: "Total",
+        });
+        return newdata1;
     }
   };
 
   const [data2, dispatch] = useReducer(red, []);
+  const [artData, artDispatch] = useReducer(red, []);
 
 
-  const call = (id:any) => {
-    console.log("called")
-    clearInterval(id)
+  const json = {
+    string: "this is a test ...",
+    integer: 42,
+    array: [1, 2, 3, 4, NaN],
+    float: 3.14159,
+    undefined: undefined,
+    object: {
+      "first-child": true,
+      "second-child": false,
+      "last-child": null,
+    },
+    "string_number": "1234",
+    "date": new Date()
+  };
+
+  const json2 = {
+    string: "this is a test ...",
   };
 
   useEffect(() => {
     setInterval(() => {
-      dispatch({type: "incr"})
+      dispatch({type: "incrThrough"})
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    setInterval(() => {
+      artDispatch({type: "incrArt"})
     }, 1000);
   }, []);
 
@@ -131,56 +143,58 @@ const Dashboard: React.FC = () => {
     <PageHeaderWrapper>
       <Card>
         <div className="site-statistic-demo-card">
-          {/*<Typography>*/}
-          {/*  <Title level={3}>Agent Status</Title>*/}
           <Row gutter={16}>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Total"
+                  title="Total Agents"
                   value={20}
+                  valueStyle={{fontWeight: "bold"}}
                 />
               </Card>
             </Col>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Ready"
+                  title="Ready Agents"
                   value={20}
+                  valueStyle={{fontWeight: "bold"}}
                 />
               </Card>
             </Col>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Used"
+                  title="Occupied Agents"
                   value={10}
+                  valueStyle={{color: "#1890ff", fontWeight: "bold"}}
                 />
               </Card>
             </Col>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Errored"
+                  title="Errored Agents"
                   value={2}
-                  valueStyle={{color: '#cf1322'}}
+                  valueStyle={{color: '#f5222d', fontWeight: "bold"}}
                 />
               </Card>
             </Col>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Running"
+                  title=" Running Agents"
                   value={2}
-                  valueStyle={{color: '#3f8600'}}
+                  valueStyle={{color: '#52c41a', fontWeight: "bold"}}
                 />
               </Card>
             </Col>
             <Col span={4}>
               <Card>
                 <Statistic
-                  title="Agent Idle"
+                  title="Idle Agents"
                   value={2}
+                  valueStyle={{fontWeight: "bold"}}
                 />
               </Card>
             </Col>
@@ -195,32 +209,18 @@ const Dashboard: React.FC = () => {
           </Title>
         </Typography>
         <Descriptions bordered>
-          <Descriptions.Item label="Product">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Billing Mode">Prepaid</Descriptions.Item>
-          <Descriptions.Item label="Automatic Renewal">YES</Descriptions.Item>
-          <Descriptions.Item label="Order time">2018-04-24 18:00:00</Descriptions.Item>
-          <Descriptions.Item label="Usage Time" span={2}>
-            2019-04-24 18:00:00
+          <Descriptions.Item label="Running">
+            <Badge status={taskStatus.status} text={taskStatus.text}/>
           </Descriptions.Item>
-          <Descriptions.Item label="Status" span={3}>
-            <Badge status="processing" text="Running" />
-          </Descriptions.Item>
-          <Descriptions.Item label="Negotiated Amount">$80.00</Descriptions.Item>
-          <Descriptions.Item label="Discount">$20.00</Descriptions.Item>
-          <Descriptions.Item label="Official Receipts">$60.00</Descriptions.Item>
-          <Descriptions.Item label="Config Info">
-            Data disk type: MongoDB
-            <br />
-            Database version: 3.4
-            <br />
-            Package: dds.mongo.mid
-            <br />
-            Storage space: 10 GB
-            <br />
-            Replication factor: 3
-            <br />
-            Region: East China 1<br />
-          </Descriptions.Item>
+          <Descriptions.Item label="Start Time">{moment(startTime).format(timeFormat)}</Descriptions.Item>
+          <Descriptions.Item label="Finish Time">{moment(finishTime).format(timeFormat)}</Descriptions.Item>
+          <Descriptions.Item label="Max Throughput(RPS)">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Min Throughput(RPS)">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Throughput P99">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Response Time Max(ms)">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Response Time Min(ms)">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Response Time P99(ms)">Cloud Database</Descriptions.Item>
+
         </Descriptions>
 
         <Divider/>
@@ -230,26 +230,32 @@ const Dashboard: React.FC = () => {
           </Title>
         </Typography>
 
-        {/*<Chart height={400} data={data} scale={cols} forceFit>*/}
-        {/*  <Axis name="year"/>*/}
-        {/*  <Axis name="value"/>*/}
-        {/*  <Tooltip*/}
-        {/*    crosshairs={{*/}
-        {/*      type: "y"*/}
-        {/*    }}*/}
-        {/*  />*/}
-        {/*  <Geom type="line" position="year*value" size={2}/>*/}
-        {/*  <Geom*/}
-        {/*    type="point"*/}
-        {/*    position="year*value"*/}
-        {/*    size={4}*/}
-        {/*    shape={"circle"}*/}
-        {/*    style={{*/}
-        {/*      stroke: "#fff",*/}
-        {/*      lineWidth: 1*/}
-        {/*    }}*/}
-        {/*  />*/}
-        {/*</Chart>*/}
+        <Chart height={400} data={data2} scale={throughputScale} forceFit>
+          <Axis name="qps" title/>
+          <Tooltip
+            // crosshairs={{
+            //   type: "y"
+            // }}
+          />
+          <Legend />
+          <Geom type="line" position="time*qps" size={2} shape="smooth"
+                color={["type", ["#1890ff", "#f5222d"]]}/>
+          <Geom
+            type="point"
+            position="time*qps"
+            size={4}
+            shape={"circle"}
+            style={["type", {
+              // stroke: "#fff",
+              fill: (type: any) => {
+                if (type === 'Total')
+                  return "#1890ff";
+                return "#f5222d";
+              },
+              lineWidth: 1
+            }]}
+          />
+        </Chart>
 
         <Divider/>
         <Typography>
@@ -258,26 +264,27 @@ const Dashboard: React.FC = () => {
           </Title>
         </Typography>
 
-        {/*<Chart height={400} data={data} scale={cols} forceFit>*/}
-        {/*  <Axis name="year"/>*/}
-        {/*  <Axis name="value"/>*/}
-        {/*  <Tooltip*/}
-        {/*    crosshairs={{*/}
-        {/*      type: "y"*/}
-        {/*    }}*/}
-        {/*  />*/}
-        {/*  <Geom type="line" position="year*value" size={2}/>*/}
-        {/*  <Geom*/}
-        {/*    type="point"*/}
-        {/*    position="year*value"*/}
-        {/*    size={4}*/}
-        {/*    shape={"circle"}*/}
-        {/*    style={{*/}
-        {/*      stroke: "#fff",*/}
-        {/*      lineWidth: 1*/}
-        {/*    }}*/}
-        {/*  />*/}
-        {/*</Chart>*/}
+        <Chart height={400} data={artData} scale={artScale} forceFit>
+          <Axis name={"art"} title/>
+          <Tooltip
+            // crosshairs={{
+            //   type: "y"
+            // }}
+          />
+          <Legend />
+          <Geom type="line" position="time*art" size={2} shape="smooth"
+                color="#1890ff"/>
+          <Geom
+            type="point"
+            position="time*art"
+            size={4}
+            shape={"circle"}
+            style={{
+              fill: "#1890ff",
+              lineWidth: 1
+            }}
+          />
+        </Chart>
 
         <Divider/>
         <Typography>
@@ -290,29 +297,30 @@ const Dashboard: React.FC = () => {
           <LazyLog extraLines={1} enableSearch url={url} caseInsensitive rowHeight={24}/>
         </div>
 
-        <Chart
-          data={data2}
-          scale={scale}
-          forceFit
-          height={400}
-          // onGetG2Instance={g2Chart => {
-          //   chart = g2Chart;
-          // }}
-        >
-          <Tooltip />
-          {/*{data2.length !== 0 ? <Axis /> : ''}*/}
-          <Legend />
-          <Geom
-            type="line"
-            position="time*temperature"
-            color={["type", ["#ff7f0e", "#2ca02c"]]}
-            shape="smooth"
-            size={2}
-          />
-        </Chart>
+        <Divider/>
+        <Typography>
+          <Title level={3}>
+            Options & Config
+          </Title>
+        </Typography>
+        <Collapse defaultActiveKey="1">
+
+          <Panel header="Master Options" key="1" >
+            <ReactJson src={json} name={false} enableClipboard={false}
+                       displayDataTypes={false}/>
+          </Panel>
+          <Panel header="Agent Options" key="2">
+
+            <ReactJson src={json2} name={false} enableClipboard={false}
+                       displayDataTypes={false}/>
+          </Panel>
+          <Panel header="Agent Config" key="3">
+            <a href="/">Download</a>
+          </Panel>
+        </Collapse>
       </Card>
     </PageHeaderWrapper>
   )
-}
+};
 
 export default Dashboard;
