@@ -1,13 +1,15 @@
 import React, {useRef, useState} from "react";
 import {Button, Card, Col, Form, InputNumber, Modal, Row, Select, Transfer, Typography, Upload} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
-import ReactResizeDetector from 'react-resize-detector';
-import AceEditor from 'react-ace';
-import ReactAce from 'react-ace';
+// import AceEditor from 'react-ace';
+// import ReactAce from 'react-ace';
 import {CopyOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import styles from "./NewTest.less";
 import useDimensions from 'react-use-dimensions';
-import "ace-builds/src-noconflict/theme-github";
+import ReactResizeDetector from "react-resize-detector"
+// import "ace-builds/src-noconflict/theme-github";
+import AceEditor from "react-ace";
+import ReactAce from "react-ace";
 
 const {Title} = Typography;
 const {Option} = Select;
@@ -57,8 +59,8 @@ const NewTest: React.FC = () => {
 
   const [MasterOptions, setMasterOptions] = useState("");
 
-  const [editor1Width, setEditor1Width] = useState("");
-  const [editor2Width, setEditor2Width] = useState("");
+  // const [editor1Width, setEditor1Width] = useState("");
+  // const [editor2Width, setEditor2Width] = useState("");
 
   const children = [];
   for (let i = 10; i < 36; i++) {
@@ -66,7 +68,7 @@ const NewTest: React.FC = () => {
   }
 
   const [modalState, setModalState] = useState({visible: false});
-  const [modalWidth, setModalWidth] = useState("");
+  const [modalWidth, setModalWidth] = useState();
 
 
   const [form] = Form.useForm();
@@ -78,7 +80,6 @@ const NewTest: React.FC = () => {
   const editor1 = useRef<ReactAce>(null);
   const editor2 = useRef<ReactAce>(null);
   const modalEditor = useRef<ReactAce>(null);
-  const [modalDiv, modalDivSize] = useDimensions();
 
   // const []
   const showModal = () => {
@@ -93,11 +94,9 @@ const NewTest: React.FC = () => {
     console.log("dddd");
   };
 
-  window.onresize = () => {
-    editor1
-    // setEditor1Width(editor1Width + "px")
-    // setEditor2Width(editor2Width + "px")
-  };
+  const onEditor1Change = (value: string) => {
+    setMasterOptions(value);
+  }
 
   return (
     <PageHeaderWrapper>
@@ -127,6 +126,19 @@ const NewTest: React.FC = () => {
             <InputNumber defaultValue={0}/>
           </Form.Item>
           <Form.Item name="agents" label="Agents">
+            <ReactResizeDetector
+              handleWidth
+              handleHeight
+              onResize={() => {
+                if (editor1.current) {
+                  editor1.current.editor.resize();
+                }
+                if (editor2.current) {
+                  editor2.current.editor.resize();
+                }
+              }}
+              targetDomEl={editor1.current}
+            />
             <Transfer
               dataSource={mockData}
               titles={['Available', 'Selected']}
@@ -144,25 +156,18 @@ const NewTest: React.FC = () => {
             />
           </Form.Item>
           <Form.Item label="Master Options" required>
-            <div
-              style={{border: "1px solid #eee", resize: "both", overflow: "auto", height: "300px", width: editor1Width}}>
-              <ReactResizeDetector
-                handleWidth
-                handleHeight
-                onResize={(width, height) => {
-                  if (editor1.current) {
-                    console.log("Resize");
-                    setEditor1Width(width);
-                    editor1.current.editor.resize();
-                  }
-                }}
-                targetDomEl={editor1.current}
-              />
+            <div style={{
+              border: "1px solid #eee",
+              height: "300px",
+              width: "100%",
+            }}
+            >
+
               <AceEditor
-                // placeholder="Input Your Options Here"
                 mode="json"
                 theme="github"
-                // width={editor2Width}
+                width={"100%"}
+                height={"100%"}
                 fontSize={14}
                 showPrintMargin={false}
                 showGutter={true}
@@ -175,9 +180,11 @@ const NewTest: React.FC = () => {
                   showLineNumbers: true,
                   tabSize: 2,
                 }}
+                onChange={onEditor1Change}
 
                 ref={editor1}
               />
+
             </div>
           </Form.Item>
 
@@ -185,29 +192,12 @@ const NewTest: React.FC = () => {
 
           <Form.Item label="Agent Options" required>
             <div
-              style={{border: "1px solid #eee", resize: "both", overflow: "auto", height: "300px", width: editor2Width}}>
-              <ReactResizeDetector
-                handleWidth
-                handleHeight
-                onResize={(width, height) => {
-                  if (editor2.current) {
-                    editor2.current.editor.resize();
-                    setEditor2Width(width);
-                  }
-                }}
-                targetDomEl={editor2.current}
-              />
+              style={{border: "1px solid #eee", height: "300px", width: "100%"}}>
               <AceEditor
-                // placeholder="Input Your Options Here"
                 mode="json"
                 theme="github"
-                // width={editorWidth + "px"}
-                // width={size.width}
-                // height={size.height}
-                // name="blah2"
-                // onLoad={this.onLoad}
-                // onChange={this.onChange}
-                width={editor2Width}
+                width={"100%"}
+                height={"100%"}
                 fontSize={14}
                 showPrintMargin={false}
                 showGutter={true}
@@ -220,13 +210,11 @@ const NewTest: React.FC = () => {
                   showLineNumbers: true,
                   tabSize: 2,
                 }}
-
-                // className={styles.customEditor}
                 ref={editor2}
               />
-              {/*</ReactResizeDetector>*/}
             </div>
           </Form.Item>
+
 
           <Form.Item label="Agent Config" required>
             <Row>
@@ -251,59 +239,50 @@ const NewTest: React.FC = () => {
                     onOk={handleOk}
                     onCancel={handleOk}
                     width={modalWidth}
-                    // width={1000}
                     wrapProps={{style: {pointerEvents: "none"}}}
-                    // style={{width:"fit-content"}}
                   >
                     <div
                       style={{
                         border: "1px solid #eee",
                         resize: "both",
                         overflow: "auto",
-                        // width:"100%"
-
-                        // height: "300px",
-                        // width: "300px"
+                        height: "300px",
+                        width: "500px"
 
                       }}
-                      ref={modalDiv}
                     >
                       <ReactResizeDetector
                         handleWidth
                         handleHeight
-                        onResize={(width, height) => {
+                        onResize={(width: number) => {
 
-                          // console.log(modalEditor.current);
+                          console.log(modalEditor.current);
                           if (modalEditor.current) {
-                            // console.log("resize");
+                            console.log("resize");
                             modalEditor.current.editor.resize();
                             setModalWidth(width + 48);
                           }
-                          // if (modalDiv.current) {
-                          //   console.log(modalDiv.current.clientWidth)
-                          // }
-                        }}
-                        targetDomEl={modalEditor.current}
-                      />
+                        }}>
 
-                      <AceEditor
-                        mode="json"
-                        theme="github"
-                        // width={modalWidth}
-                        fontSize={14}
-                        showPrintMargin={false}
-                        showGutter={true}
-                        highlightActiveLine={true}
-                        value={MasterOptions}
-                        setOptions={{
-                          enableBasicAutocompletion: false,
-                          enableLiveAutocompletion: false,
-                          enableSnippets: false,
-                          showLineNumbers: true,
-                          tabSize: 2,
-                        }}
-                        ref={modalEditor}
-                      />
+                        <AceEditor
+                          mode="json"
+                          theme="github"
+                          // width={modalWidth}
+                          fontSize={14}
+                          showPrintMargin={false}
+                          showGutter={true}
+                          highlightActiveLine={true}
+                          value={MasterOptions}
+                          setOptions={{
+                            enableBasicAutocompletion: false,
+                            enableLiveAutocompletion: false,
+                            enableSnippets: false,
+                            showLineNumbers: true,
+                            tabSize: 2,
+                          }}
+                          ref={modalEditor}
+                        />
+                      </ReactResizeDetector>
                     </div>
                   </Modal>
 
