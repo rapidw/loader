@@ -52,6 +52,7 @@ project(":common") {
     apply plugin: 'java-library'
     apply plugin: 'io.freefair.lombok'
     apply plugin: 'com.google.protobuf'
+    apply plugin: "idea"
 
     dependencies {
         implementation "org.slf4j:slf4j-api:${slf4jVersion}"
