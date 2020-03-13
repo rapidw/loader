@@ -98,10 +98,10 @@ export default {
           component: './NewTest',
         },
         {
-          path: '/agents',
-          name: 'Supervisors & Agents',
+          path: '/supervisors',
+          name: 'Supervisors',
           icon: 'smile',
-          component: './AgentList',
+          component: './Supervisors',
         },
         // {
         //   path: '/admin',

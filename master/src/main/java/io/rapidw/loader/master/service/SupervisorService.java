@@ -1,8 +1,9 @@
 package io.rapidw.loader.master.service;
 
 import com.google.protobuf.ByteString;
-import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import io.grpc.stub.StreamObserver;
+import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
+import io.rapidw.loader.master.request.SupervisorDeployRequest;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.stereotype.Service;
@@ -14,8 +15,22 @@ import java.util.List;
 @Service
 public class SupervisorService {
 
-        private List<Supervisor> supervisors = new ArrayList<>();
+    private List<Supervisor> supervisors = new ArrayList<>();
     private List<Supervisor> supervisorsInUse;
+
+    public void deploySupervisor(SupervisorDeployRequest supervisorDeployRequest) {
+//        SshDeployerOptions options = SshDeployerOptions.builder()
+//            .host("192.168.1.254")
+//            .port(32768)
+//            .username("root")
+//            .password("root")
+//            .build();
+//        SshDeployer deployer = new SshDeployer(options);
+//        deployer.task(new ScpByteArrayUploadTask(IOUtils.resourceToByteArray("/logback-test.xml"), "/root/2.xml", Utils.permission777()))
+//            .task(new CommandTask("ls -l"));
+//        deployer.run();
+    }
+
     public void addSupervisor(SocketAddress address, StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver) {
         supervisors.add(Supervisor.builder().address(address).responseObserver(responseObserver).build());
     }
@@ -23,7 +38,7 @@ public class SupervisorService {
     public void removeSupervisor(SocketAddress address) {
 
         int i;
-        for (i = 0;i < supervisors.size(); i++) {
+        for (i = 0; i < supervisors.size(); i++) {
             if (supervisors.get(i).getAddress().equals(address)) {
                 break;
             }

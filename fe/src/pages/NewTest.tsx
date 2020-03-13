@@ -117,7 +117,7 @@ const NewTest: React.FC = () => {
             <Button type="primary" onClick={handleReuse}>Re-use last test options</Button>
           </Form.Item>
           <Form.Item name="throughLimit" label="Throughput Limit(RPS)" rules={[{type: "number", min: 0}]}>
-            <InputNumber defaultValue={0}/>
+            <InputNumber value={10}/>
           </Form.Item>
           <Form.Item name="durationLimit" label="Duration Limit(ms)" rules={[{type: "number", min: 0}]}>
             <InputNumber defaultValue={0}/>
@@ -126,33 +126,20 @@ const NewTest: React.FC = () => {
             <InputNumber defaultValue={0}/>
           </Form.Item>
           <Form.Item name="agents" label="Agents">
-            <ReactResizeDetector
-              handleWidth
-              handleHeight
-              onResize={() => {
-                if (editor1.current) {
-                  editor1.current.editor.resize();
-                }
-                if (editor2.current) {
-                  editor2.current.editor.resize();
-                }
-              }}
-              targetDomEl={editor1.current}
-            />
+
             <Transfer
               dataSource={mockData}
               titles={['Available', 'Selected']}
               className={styles.customTransfer}
+              showSearch
+              showSelectAll
               // targetKeys={targetKeys}
               // selectedKeys={selectedKeys}
               // onChange={this.handleChange}
               // onSelectChange={this.handleSelectChange}
               // onScroll={this.handleScroll}
               render={item => item.title != null ? item.title : ""}
-              // disabled={disabled}
-              // listStyle={{width: "auto"}}
-              // style={{width:"50%", flex: "none"}}
-              // ref={item}
+              // style={{height: "900px"}}
             />
           </Form.Item>
           <Form.Item label="Master Options" required>
@@ -162,6 +149,20 @@ const NewTest: React.FC = () => {
               width: "100%",
             }}
             >
+
+              <ReactResizeDetector
+                handleWidth
+                handleHeight
+                onResize={() => {
+                  if (editor1.current) {
+                    editor1.current.editor.resize();
+                  }
+                  if (editor2.current) {
+                    editor2.current.editor.resize();
+                  }
+                }}
+                targetDomEl={editor1.current}
+              />
 
               <AceEditor
                 mode="json"

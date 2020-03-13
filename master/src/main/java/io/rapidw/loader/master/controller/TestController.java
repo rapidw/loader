@@ -1,6 +1,7 @@
 package io.rapidw.loader.master.controller;
 
 import io.rapidw.loader.master.config.ApiController;
+import io.rapidw.loader.master.response.BaseResponse;
 import io.rapidw.loader.master.response.DataResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
@@ -80,5 +81,11 @@ public class TestController {
     @GetMapping("/log")
     public void logff() {
         log.info("dadsagdadf");
+    }
+
+
+    @GetMapping("/rrr")
+    public BaseResponse get() {
+        return BaseResponse.SUCCESS;
     }
 }

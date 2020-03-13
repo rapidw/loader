@@ -1,5 +1,6 @@
 package io.rapidw.loader.master.controller;
 
+import io.rapidw.loader.master.config.ApiController;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.TestingOuterRequest;
@@ -13,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 import java.io.IOException;
 
-@RestController
+@ApiController
 public class TestingController {
     private final TestingService testingService;
     private final ObjectMapper objectMapper;

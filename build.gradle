@@ -187,11 +187,17 @@ project(":master") {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
 
+    configurations {
+        other
+    }
+
     dependencies {
 
         implementation project(':common')
         implementation project(':api')
-        implementation project(":fe")
+        other project(":fe")
+
+        implementation "io.rapidw.utils:rapidw-ssh-deployer:0.0.1"
 
         implementation 'org.springframework.boot:spring-boot-starter-web'
         implementation 'org.springframework.boot:spring-boot-starter-websocket'
@@ -201,6 +207,9 @@ project(":master") {
         implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
 
         annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+        other project(":supervisor")
+
     }
 
     javadoc {
@@ -208,7 +217,20 @@ project(":master") {
     }
 
     mainClassName = 'io.rapidw.loader.master.App'
+
+    task extractApi(type: Copy) {
+
+
+        dependsOn ":supervisor:build"
+        from(file("${project(":supervisor").buildDir}/libs"))
+        into "$buildDir/resources/main"
+        rename {filename ->  "supervisor.jar"}
+
+    }
+
+    processResources.dependsOn(extractApi)
 }
+
 
 project(":fe") {
     apply plugin: "base"
@@ -243,6 +265,12 @@ project(":fe") {
     build.dependsOn bundle
     build.dependsOn copy
     copy.mustRunAfter bundle
+
+    task doClean(type: Delete) {
+        delete "dist"
+    }
+
+    clean.dependsOn doClean
 }
 
 project(":supervisor") {
@@ -264,10 +292,6 @@ project(":supervisor") {
         implementation "com.google.guava:guava:${guavaVersion}"
     }
 
-    javadoc {
-        source = sourceSets.main.delombokTask
-    }
-
     mainClassName = 'io.rapidw.loader.supervisor.App'
 }
 
@@ -279,6 +303,7 @@ project(":demo") {
         implementation project(":api")
 
         implementation "io.rapidw.mqtt:rapidw-mqtt-client:0.0.8"
+        implementation "ch.qos.logback:logback-classic:${logbackVersion}"
     }
 }
 

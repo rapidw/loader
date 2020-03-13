@@ -14,8 +14,8 @@ public class BaseResponse {
     private Integer errorCode;
     private String errorInfo;
 
-    private final static BaseResponse SUCCESS = new BaseResponse(AppStatus.SUCCESS);
-    private final static BaseResponse AUTH_FAILED = new BaseResponse(AppStatus.AUTH_FAILED);
+    public final static BaseResponse SUCCESS = new BaseResponse(AppStatus.SUCCESS);
+    public final static BaseResponse AUTH_FAILED = new BaseResponse(AppStatus.AUTH_FAILED);
 
     public BaseResponse(AppStatus status) {
         this.errorCode = status.getErrorCode();
@@ -33,13 +33,5 @@ public class BaseResponse {
         } else {
             this.errorInfo = status.getErrorInfo() + ": " + message;
         }
-    }
-
-    public static BaseResponse success() {
-        return SUCCESS;
-    }
-
-    public static BaseResponse authFailed() {
-        return AUTH_FAILED;
     }
 }
