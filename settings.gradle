@@ -1,7 +1,8 @@
 rootProject.name = 'rapidw-loader'
+
+include 'common'
 include 'master'
 include 'supervisor'
-include 'common'
 include 'api'
 include 'fe'
 include 'demo'
