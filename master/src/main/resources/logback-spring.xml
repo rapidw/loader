@@ -59,6 +59,9 @@
         </encoder>
     </appender>
 
+    <logger name="io.netty.handler.logging.LoggingHandler" level="OFF" />
+    <logger name="io.rapidw.sshdeployer" level="DEBUG" />
+
     <root level="info">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="infoFile" />

@@ -42,8 +42,10 @@ subprojects {
     }
 
     repositories {
+        mavenLocal()
         jcenter()
         mavenCentral()
+
     }
 }
 
@@ -197,7 +199,7 @@ project(":master") {
         implementation project(':api')
         other project(":fe")
 
-        implementation "io.rapidw.utils:rapidw-ssh-deployer:0.0.1"
+        implementation "io.rapidw.utils:rapidw-ssh-deployer:0.0.3-SNAPSHOT"
 
         implementation 'org.springframework.boot:spring-boot-starter-web'
         implementation 'org.springframework.boot:spring-boot-starter-websocket'
