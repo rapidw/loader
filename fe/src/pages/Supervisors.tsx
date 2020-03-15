@@ -1,12 +1,12 @@
 import React, {useState} from "react";
-import {Button, Card, Col, Form, Input, InputNumber, Modal, Row, Table, message} from "antd";
+import {Button, Card, Col, ConfigProvider, Empty, Form, Input, InputNumber, message, Modal, Row, Table} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
 import request from 'umi-request';
 import {ExclamationCircleOutlined} from "@ant-design/icons/lib";
 
-const { confirm } = Modal;
+const {confirm} = Modal;
 
 interface SupervisorInfo {
   id: number,
@@ -15,10 +15,17 @@ interface SupervisorInfo {
   path: string,
 }
 
+const customizeRenderEmpty = () => (
+  <div style={{ textAlign: 'center' }}>
+    {Empty.PRESENTED_IMAGE_SIMPLE}
+    <p>No Data Found</p>
+  </div>
+);
+
 const AgentList: React.FC = () => {
-  const removeSingleSupervisorRequest = useRequest((record:SupervisorInfo) => ({
+  const removeSingleSupervisorRequest = useRequest((record: SupervisorInfo) => ({
     url: `/api/supervisors/${record.id}`,
-    method:"delete",
+    method: "delete",
   }), {
     manual: true,
     onSuccess: (result, params) => {
@@ -29,9 +36,9 @@ const AgentList: React.FC = () => {
     }
   });
 
-  const removeMultiSupervisorRequest = useRequest((data: {ids: number[]}) => ({
+  const removeMultiSupervisorRequest = useRequest((data: { ids: number[] }) => ({
     url: `/api/supervisors`,
-    method:"delete",
+    method: "delete",
     data: data
   }), {
     manual: true,
@@ -62,7 +69,7 @@ const AgentList: React.FC = () => {
     },
     {
       title: "Action",
-      render: (_:any, record: SupervisorInfo) => (
+      render: (_: any, record: SupervisorInfo) => (
         <span>
           <a onClick={() => removeSingleConfirm(record)}>Remove</a>
         </span>
@@ -70,8 +77,8 @@ const AgentList: React.FC = () => {
     }
   ];
 
-  const supervisorTableRequest = useRequest(({ current, pageSize, sorter: s, filters: f }) => {
-    const p: any = { current, pageSize };
+  const supervisorTableRequest = useRequest(({current, pageSize, sorter: s, filters: f}) => {
+    const p: any = {current, pageSize};
     if (s?.field && s?.order) {
       p[s.field] = s.order;
     }
@@ -81,7 +88,7 @@ const AgentList: React.FC = () => {
       });
     }
     // console.log(p);
-    return request.get('/api/supervisors').then(function(response) {
+    return request.get('/api/supervisors').then(function (response) {
       // console.log(response);
       return {
         total: response.data.total,
@@ -120,13 +127,13 @@ const AgentList: React.FC = () => {
   };
 
   const addSupervisorInitialValues = {
-    port:22,
+    port: 22,
     path: "~"
   };
 
   const addSupervisorRequest = useRequest((addSupervisorForm) => ({
     url: "/api/supervisors",
-    method:"post",
+    method: "post",
     data: addSupervisorForm.getFieldsValue()
 
   }), {
@@ -152,7 +159,7 @@ const AgentList: React.FC = () => {
   const removeSingleConfirm = (record: SupervisorInfo) => {
     confirm({
       title: 'Are you sure remove this supervisor?',
-      icon: <ExclamationCircleOutlined />,
+      icon: <ExclamationCircleOutlined/>,
       content: 'this supervisor will exit',
       okText: 'Yes',
       okType: 'danger',
@@ -169,7 +176,7 @@ const AgentList: React.FC = () => {
   const removeMultiConfirm = () => {
     confirm({
       title: 'Are you sure remove these supervisors?',
-      icon: <ExclamationCircleOutlined />,
+      icon: <ExclamationCircleOutlined/>,
       content: 'selected supervisors will exit',
       okText: 'Yes',
       okType: 'danger',
@@ -177,7 +184,7 @@ const AgentList: React.FC = () => {
       onOk() {
         setSelectedRowKeys([]);
         removeMultiSupervisorRequest.run({
-          ids:selectedRowKeys
+          ids: selectedRowKeys
         });
       },
       onCancel() {
@@ -192,18 +199,18 @@ const AgentList: React.FC = () => {
         <Row justify={"space-between"}>
           <Col>
             <div style={{display: "inline-block"}}>
-            <Button onClick={removeMultiConfirm} disabled={!hasSelected}>
-              Remove
-            </Button>
+              <Button onClick={removeMultiConfirm} disabled={!hasSelected}>
+                Remove
+              </Button>
 
-            <span style={{marginLeft: 8}}>
+              <span style={{marginLeft: 8}}>
             {hasSelected ? `Selected ${selectedRowKeys.length} items` : ''}
             </span>
             </div>
           </Col>
 
           <Col>
-            <Button onClick={supervisorTableRequest.refresh} style={{marginRight:8}}>Refresh</Button>
+            <Button onClick={supervisorTableRequest.refresh} style={{marginRight: 8}}>Refresh</Button>
             <Button type="primary" onClick={onDeploySupervisorButtonClicked}>Deploy new supervisor</Button>
             <Modal
               title="Supervisor Deploy Options"
@@ -214,24 +221,24 @@ const AgentList: React.FC = () => {
               // wrapProps={{style: {pointerEvents: "none"}}}
             >
               <Form form={addAgentForm}
-                    labelCol={{lg:5}}
-                    wrapperCol={{lg:18}}
+                    labelCol={{lg: 5}}
+                    wrapperCol={{lg: 18}}
                     initialValues={addSupervisorInitialValues}
-                    // onFinish={onAddSupervisorFinish}
+                // onFinish={onAddSupervisorFinish}
               >
-                <Form.Item name="host" label="Host" required >
+                <Form.Item name="host" label="Host" required>
                   <Input/>
                 </Form.Item>
-                <Form.Item name="port" label="Port" required rules={[{type: "number", max: 65535, min: 1}]} >
+                <Form.Item name="port" label="Port" required rules={[{type: "number", max: 65535, min: 1}]}>
                   <InputNumber/>
                 </Form.Item>
-                <Form.Item name="path" label="Deploy path" required >
+                <Form.Item name="path" label="Deploy path" required>
                   <Input/>
                 </Form.Item>
-                <Form.Item name="username" label="Username" required >
+                <Form.Item name="username" label="Username" required>
                   <Input/>
                 </Form.Item>
-                <Form.Item name="password" label="Password" required >
+                <Form.Item name="password" label="Password" required>
                   <Input/>
                 </Form.Item>
               </Form>
@@ -240,7 +247,10 @@ const AgentList: React.FC = () => {
         </Row>
         <Row style={{marginTop: "16px"}}>
           <Col span={24}>
-            <Table rowSelection={rowSelection} columns={columns}  rowKey={"id"} {...supervisorTableRequest.tableProps}/>
+            <ConfigProvider renderEmpty={customizeRenderEmpty}>
+              <Table rowSelection={rowSelection} columns={columns}
+                     rowKey={"id"} {...supervisorTableRequest.tableProps}/>
+            </ConfigProvider>
           </Col>
         </Row>
       </Card>
