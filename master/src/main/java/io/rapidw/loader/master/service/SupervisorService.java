@@ -7,6 +7,8 @@ import io.rapidw.loader.master.config.AppConfig;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.SupervisorDeployRequest;
+import io.rapidw.loader.master.response.PagedResponse;
+import io.rapidw.loader.master.response.SupervisorInfo;
 import io.rapidw.sshdeployer.SshDeployer;
 import io.rapidw.sshdeployer.SshDeployerOptions;
 import io.rapidw.sshdeployer.task.CommandTask;
@@ -17,9 +19,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.FileSystemNotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -46,11 +50,16 @@ public class SupervisorService {
         deployer.task(new ScpClasspathFileUploadTask("/supervisor.jar", supervisorDeployRequest.getPath() + "/supervisor.jar"))
             .task(new ScpLocalFileUploadTask(appConfig.getJre().getFilePath(), supervisorDeployRequest.getPath() + "/jre.tar.gz"))
             .task(new CommandTask("tar zxf /root/jre.tar.gz"))
-            .task(new CommandTask(String.format("nohup /root/%s/bin/java -jar supervisor.jar " +
-                    "--supervisor.grpcServer.host=%s --supervisor.grpcServer.port=%s &",
-                appConfig.getJre().getFolderName(),
-                appConfig.getGrpcServer().getHost(),
-                appConfig.getGrpcServer().getPort()))
+            .task(
+                new CommandTask(
+                    String.format("nohup /root/%s/bin/java -jar supervisor.jar " +
+                            "--supervisor.grpcServer.host=%s --supervisor.grpcServer.port=%s --supervisor.path=%s > nohup.log 2>&1 </dev/null &",
+                        appConfig.getJre().getFolderName(),
+                        appConfig.getGrpcServer().getHost(),
+                        appConfig.getGrpcServer().getPort(),
+                        supervisorDeployRequest.getPath()
+                    )
+                )
             );
 
         try {
@@ -63,8 +72,14 @@ public class SupervisorService {
         }
     }
 
-    public void addSupervisor(SocketAddress address, StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver) {
-        supervisors.add(Supervisor.builder().address(address).responseObserver(responseObserver).build());
+    public void addSupervisor(SocketAddress address, String path, StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver) {
+        supervisors.add(Supervisor.builder().address(address).path(path).responseObserver(responseObserver).build());
+    }
+
+    public void removeSupervisor(int id) {
+
+        Supervisor supervisor = supervisors.remove(id);
+        supervisor.close();
     }
 
     public void removeSupervisor(SocketAddress address) {
@@ -97,10 +112,29 @@ public class SupervisorService {
         supervisorsInUse.forEach(Supervisor::startAgent);
     }
 
+    public PagedResponse.PagedData<SupervisorInfo> getAllSupervisors() {
+        List<SupervisorInfo> supervisorInfoList = new LinkedList<>();
+        for (int i = 0; i < supervisors.size(); i++) {
+            Supervisor current = supervisors.get(i);
+            SocketAddress address = current.getAddress();
+            if (address instanceof InetSocketAddress) {
+                InetSocketAddress inetAddress = (InetSocketAddress) address;
+                supervisorInfoList.add(new SupervisorInfo(i, inetAddress.getAddress().getHostAddress(), inetAddress.getPort(), current.getPath()));
+            }
+
+        }
+        return PagedResponse.PagedData.<SupervisorInfo>builder()
+            .data(supervisorInfoList)
+            .pageNum(1)
+            .pageSize(20)
+            .total(supervisorInfoList.size()).build();
+    }
+
     @Builder
     @Getter
     private static class Supervisor {
         private SocketAddress address;
+        private String path;
         private StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver;
 
         public void loadAgent(byte[] data) {
@@ -139,6 +173,10 @@ public class SupervisorService {
                     .build())
                 .build()
             );
+        }
+
+        public void close() {
+            responseObserver.onCompleted();
         }
     }
 }

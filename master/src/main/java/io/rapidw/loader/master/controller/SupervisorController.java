@@ -1,11 +1,15 @@
 package io.rapidw.loader.master.controller;
 
 import io.rapidw.loader.master.config.ApiController;
+import io.rapidw.loader.master.exception.AppException;
+import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.SupervisorDeployRequest;
 import io.rapidw.loader.master.response.BaseResponse;
+import io.rapidw.loader.master.response.PagedResponse;
+import io.rapidw.loader.master.response.SupervisorInfo;
 import io.rapidw.loader.master.service.SupervisorService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.apache.commons.validator.routines.InetAddressValidator;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -20,7 +24,21 @@ public class SupervisorController {
 
     @PostMapping("/supervisors")
     public BaseResponse deploySupervisor(@Valid @RequestBody SupervisorDeployRequest supervisorDeployRequest) {
+        if (!InetAddressValidator.getInstance().isValid(supervisorDeployRequest.getHost())) {
+            throw new AppException(AppStatus.BAD_REQUEST, "invalid ip address");
+        }
         supervisorService.deploySupervisor(supervisorDeployRequest);
+        return BaseResponse.SUCCESS;
+    }
+
+    @GetMapping("/supervisors")
+    public PagedResponse<SupervisorInfo> getSupervisors() {
+        return PagedResponse.of(supervisorService.getAllSupervisors());
+    }
+
+    @DeleteMapping("/supervisors/{supervisor_id}")
+    public BaseResponse delete(@PathVariable("supervisor_id") int id) {
+        supervisorService.removeSupervisor(id);
         return BaseResponse.SUCCESS;
     }
 }

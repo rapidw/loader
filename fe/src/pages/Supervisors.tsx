@@ -3,47 +3,99 @@ import {Button, Card, Col, Form, Input, InputNumber, Modal, Row, Table, message}
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
+import request from 'umi-request';
+
+interface SupervisorInfo {
+  id: number,
+  host: string,
+  port: number,
+  path: string,
+}
 
 const AgentList: React.FC = () => {
+  const removeSupervisorRequest = useRequest((record:SupervisorInfo) => ({
+    url: `/api/supervisors/${record.id}`,
+    method:"delete",
+  }), {
+    manual: true,
+    onSuccess: (result, params) => {
+      if (result.errorCode == 0) {
+        message.success(`new supervisor ${params[0].host}:${params[0].port} removed`);
+        supervisorTableRequest.refresh();
+      }
+    }
+  });
+
+
+  const removeSupervisor = (record:SupervisorInfo) => {
+    removeSupervisorRequest.run(record);
+  };
+
   const columns = [
     {
-      title: 'Name',
-      dataIndex: 'name',
+      title: "ID",
+      dataIndex: "id"
     },
     {
-      title: 'Age',
-      dataIndex: 'age',
+      title: 'Host',
+      dataIndex: 'host',
     },
     {
-      title: 'Address',
-      dataIndex: 'address',
+      title: 'Port',
+      dataIndex: 'port',
     },
+    {
+      title: "Path",
+      dataIndex: "path"
+    },
+    {
+      title: "Action",
+      render: (_:any, record: SupervisorInfo) => (
+        <span>
+          <a onClick={() => removeSupervisor(record)}>Remove</a>
+        </span>
+      )
+    }
   ];
 
-  const data = [];
-  for (let i = 0; i < 46; i++) {
-    data.push({
-      key: i,
-      name: `Edward King ${i}`,
-      age: 32,
-      address: `London, Park Lane no. ${i}`,
-    });
-  }
+  const supervisorTableRequest = useRequest(({ current, pageSize, sorter: s, filters: f }) => {
+    const p: any = { current, pageSize };
+    if (s?.field && s?.order) {
+      p[s.field] = s.order;
+    }
+    if (f) {
+      Object.entries(f).forEach(([filed, value]) => {
+        p[filed] = value;
+      });
+    }
+    console.log(p);
+    return request.get('/api/supervisors').then(function(response) {
+      console.log(response);
+      return {
+        total: response.data.total,
+        list: response.data.data
+      }
+    })
+  }, {
+    paginated: true,
+    defaultPageSize: 20
+  });
+
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<any>([]);
-  const [fff, setLoading] = useState<boolean>(false);
+  const [tableLoading, setTableLoading] = useState<boolean>(false);
 
-  const start = () => {
-    setLoading(true)
+  const reloadTable = () => {
+    setTableLoading(true);
     // ajax request after empty completing
     setTimeout(() => {
-      setLoading(false);
+      setTableLoading(false);
       setSelectedRowKeys([])
     }, 1000);
   };
 
   const onSelectChange = (selectedRowKeys: any) => {
-    console.log('selectedRowKeys changed: ', selectedRowKeys);
+    // console.log('selectedRowKeys changed: ', selectedRowKeys);
     setSelectedRowKeys(selectedRowKeys);
   };
 
@@ -61,8 +113,6 @@ const AgentList: React.FC = () => {
 
   const [addAgentForm] = useForm();
 
-
-
   const onAddSupervisorModalCancel = () => {
     setAddSupervisorModalVisible(false);
   };
@@ -72,27 +122,28 @@ const AgentList: React.FC = () => {
     path: "~"
   };
 
-  const { loading, run } = useRequest("/api/rrr", {
+  const addSupervisorRequest = useRequest((addSupervisorForm) => ({
+    url: "/api/supervisors",
+    method:"post",
+    data: addSupervisorForm.getFieldsValue()
+
+  }), {
     manual: true,
     onSuccess: (result, params) => {
-
       if (result.errorCode == 0) {
-      //   console.log("success");
-      //   message.success(`new supervisor ${}`);
+        setAddSupervisorModalVisible(false);
+        message.success(`new supervisor ${params[0].getFieldValue("host")}:${params[0].getFieldValue("port")} deployed`);
+        supervisorTableRequest.refresh()
       }
     }
   });
 
-  const onAddSupervisorFinish = () => {
-    run()
-  };
-
   const onAddSupervisorModalOk = () => {
 
     addAgentForm.validateFields().then(value => {
-      addAgentForm.resetFields();
-      setAddSupervisorModalVisible(false);
-      run()
+      // setAddSupervisorModalVisible(false);
+      addSupervisorRequest.run(addAgentForm)
+
     }).catch(info => console.log("validate failed", info));
   };
 
@@ -102,8 +153,8 @@ const AgentList: React.FC = () => {
         <Row justify={"space-between"}>
           <Col>
             <div style={{display: "inline-block"}}>
-            <Button onClick={start} disabled={!hasSelected} loading={loading}>
-              Reload
+            <Button onClick={reloadTable} disabled={!hasSelected} loading={tableLoading}>
+              Remove
             </Button>
 
             <span style={{marginLeft: 8}}>
@@ -113,24 +164,26 @@ const AgentList: React.FC = () => {
           </Col>
 
           <Col>
-            <Button type="primary" onClick={onAddSupervisorButtonClicked}>Add new supervisor</Button>
+            <Button onClick={supervisorTableRequest.refresh} style={{marginRight:8}}>Refresh</Button>
+            <Button type="primary" onClick={onAddSupervisorButtonClicked}>Deploy new supervisor</Button>
             <Modal
-              title="Supervisor Deploy Config"
+              title="Supervisor Deploy Options"
               visible={addSupervisorModalVisible}
               onOk={onAddSupervisorModalOk}
               onCancel={onAddSupervisorModalCancel}
+              okButtonProps={{loading: addSupervisorRequest.loading}}
               // wrapProps={{style: {pointerEvents: "none"}}}
             >
               <Form form={addAgentForm}
                     labelCol={{lg:5}}
                     wrapperCol={{lg:18}}
                     initialValues={addSupervisorInitialValues}
-                    onFinish={onAddSupervisorFinish}
+                    // onFinish={onAddSupervisorFinish}
               >
                 <Form.Item name="host" label="Host" required >
                   <Input/>
                 </Form.Item>
-                <Form.Item name="port" label="Port" required >
+                <Form.Item name="port" label="Port" required rules={[{type: "number", max: 65535, min: 1}]} >
                   <InputNumber/>
                 </Form.Item>
                 <Form.Item name="path" label="Deploy path" required >
@@ -140,7 +193,7 @@ const AgentList: React.FC = () => {
                   <Input/>
                 </Form.Item>
                 <Form.Item name="password" label="Password" required >
-                  <Input type="password"/>
+                  <Input/>
                 </Form.Item>
               </Form>
             </Modal>
@@ -148,7 +201,7 @@ const AgentList: React.FC = () => {
         </Row>
         <Row style={{marginTop: "16px"}}>
           <Col span={24}>
-            <Table rowSelection={rowSelection} columns={columns} dataSource={data}/>
+            <Table rowSelection={rowSelection} columns={columns}  rowKey={"id"} {...supervisorTableRequest.tableProps}/>
           </Col>
         </Row>
       </Card>

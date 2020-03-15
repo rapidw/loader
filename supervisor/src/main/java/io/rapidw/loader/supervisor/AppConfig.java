@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "supervisor")
 public class AppConfig {
 
+    private String path;
     private GrpcServer grpcServer;
 
     /**

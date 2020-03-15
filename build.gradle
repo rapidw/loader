@@ -36,6 +36,7 @@ subprojects {
         commonsLangVersion = '3.9'
         commonsMathVersion = '3.6.1'
         commonsIoVersion = '2.6'
+        commonsValidatorVersion = "1.6"
 
         url = "https://github.com/rapidw/loader"
         vcsUrl = "${url}.git"
@@ -207,6 +208,7 @@ project(":master") {
         implementation "org.apache.commons:commons-math3:${commonsMathVersion}"
         implementation "commons-io:commons-io:${commonsIoVersion}"
         implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
+        implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
 
         annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
@@ -220,7 +222,7 @@ project(":master") {
 
     mainClassName = 'io.rapidw.loader.master.App'
 
-    task extractApi(type: Copy) {
+    task copyFromSupervisor(type: Copy) {
 
 
         dependsOn ":supervisor:build"
@@ -230,7 +232,7 @@ project(":master") {
 
     }
 
-    processResources.dependsOn(extractApi)
+    processResources.dependsOn(copyFromSupervisor)
 }
 
 
@@ -295,6 +297,13 @@ project(":supervisor") {
     }
 
     mainClassName = 'io.rapidw.loader.supervisor.App'
+
+    task copyToMasterResource(type: Copy) {
+        group "build"
+        dependsOn build
+        from "${buildDir}/libs"
+        into "${project(":master").buildDir}/reources/main"
+    }
 }
 
 project(":demo") {

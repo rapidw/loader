@@ -19,7 +19,7 @@ message SupervisorMessage {
 }
 
 message RegisterReq {
-
+    string path = 1;
 }
 
 message LoadResp {

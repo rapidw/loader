@@ -1,13 +1,9 @@
 import React, {useRef, useState} from "react";
 import {Button, Card, Col, Form, InputNumber, Modal, Row, Select, Transfer, Typography, Upload} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
-// import AceEditor from 'react-ace';
-// import ReactAce from 'react-ace';
 import {CopyOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import styles from "./NewTest.less";
-import useDimensions from 'react-use-dimensions';
 import ReactResizeDetector from "react-resize-detector"
-// import "ace-builds/src-noconflict/theme-github";
 import AceEditor from "react-ace";
 import ReactAce from "react-ace";
 

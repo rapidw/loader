@@ -40,8 +40,9 @@ public class GrpcService extends LoaderServiceGrpc.LoaderServiceImplBase {
                 SocketAddress address = GrpcInterceptor.ADDRESS_KEY.get(Context.current());
                 switch (supervisorMessage.getMessageOneofCase()) {
                     case REGISTER_REQ:
-                        log.info("registering new agent: {}", address);
-                        supervisorService.addSupervisor(address, responseObserver);
+                        String path = supervisorMessage.getRegisterReq().getPath();
+                        log.info("registering new agent: {}:{}", address, path);
+                        supervisorService.addSupervisor(address, path, responseObserver);
 //                        agentService.printAgentList();
                         responseObserver.onNext(
                                 LoaderServiceOuterClass.MasterMessage.newBuilder()

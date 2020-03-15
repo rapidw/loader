@@ -52,7 +52,7 @@ public class GrpcClient {
         // supervisor向master发送RegisterReq，注册
         log.info("registering to master {}:{}", appConfig.getGrpcServer().getHost(), appConfig.getGrpcServer().getPort());
         requestObserver.onNext(LoaderServiceOuterClass.SupervisorMessage.newBuilder().
-            setRegisterReq(LoaderServiceOuterClass.RegisterReq.newBuilder().build()).build());
+            setRegisterReq(LoaderServiceOuterClass.RegisterReq.newBuilder().setPath(appConfig.getPath()).build()).build());
 
         finishLatch.await();
     }
