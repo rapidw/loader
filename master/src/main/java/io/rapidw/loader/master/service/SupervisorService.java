@@ -1,9 +1,9 @@
 package io.rapidw.loader.master.service;
 
-import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import io.rapidw.loader.master.config.AppConfig;
+import io.rapidw.loader.master.entity.Supervisor;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.SupervisorDeployRequest;
@@ -14,8 +14,6 @@ import io.rapidw.sshdeployer.SshDeployerOptions;
 import io.rapidw.sshdeployer.task.CommandTask;
 import io.rapidw.sshdeployer.task.ScpClasspathFileUploadTask;
 import io.rapidw.sshdeployer.task.ScpLocalFileUploadTask;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -73,7 +71,7 @@ public class SupervisorService {
     }
 
     public void addSupervisor(SocketAddress address, String path, StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver) {
-        supervisors.add(Supervisor.builder().address(address).path(path).responseObserver(responseObserver).build());
+        supervisors.add(Supervisor.builder().address(address).path(path).status(Supervisor.Status.READY).responseObserver(responseObserver).build());
     }
 
     public void removeSupervisor(int id) {
@@ -119,7 +117,14 @@ public class SupervisorService {
             SocketAddress address = current.getAddress();
             if (address instanceof InetSocketAddress) {
                 InetSocketAddress inetAddress = (InetSocketAddress) address;
-                supervisorInfoList.add(new SupervisorInfo(i, inetAddress.getAddress().getHostAddress(), inetAddress.getPort(), current.getPath()));
+                supervisorInfoList.add(SupervisorInfo.builder()
+                    .id(i)
+                    .host(inetAddress.getAddress().getHostAddress())
+                    .port(inetAddress.getPort())
+                    .path(current.getPath())
+                    .status(current.getStatus())
+                    .build()
+                );
             }
 
         }
@@ -130,53 +135,4 @@ public class SupervisorService {
             .total(supervisorInfoList.size()).build();
     }
 
-    @Builder
-    @Getter
-    private static class Supervisor {
-        private SocketAddress address;
-        private String path;
-        private StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver;
-
-        public void loadAgent(byte[] data) {
-            responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-                .setLoadReq(LoaderServiceOuterClass.LoadReq.newBuilder()
-                    .setData(ByteString.copyFrom(data))
-                    .build())
-                .build()
-            );
-        }
-
-        public void configAgent(byte[] agentParamBytes, byte[] agentConfigBytes) {
-            responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-                .setAgentConfigReq(LoaderServiceOuterClass.AgentConfigReq.newBuilder()
-                    .setAgentParamsBytes(ByteString.copyFrom(agentParamBytes))
-                    .setAgentConfigBytes(ByteString.copyFrom(agentConfigBytes))
-                    .build())
-                .build()
-            );
-        }
-
-        public void configSupervisor(int rpsLimit, int perAgentTotalLimit, int durationLimit) {
-            responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-                .setSupervisorConfigReq(LoaderServiceOuterClass.SupervisorConfigReq.newBuilder()
-                    .setRpsLimit(rpsLimit)
-                    .setPerAgentTotalLimit(perAgentTotalLimit)
-                    .setDurationLimit(durationLimit)
-                    .build())
-                .build()
-            );
-        }
-
-        public void startAgent() {
-            responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-                .setStartReq(LoaderServiceOuterClass.StartReq.newBuilder()
-                    .build())
-                .build()
-            );
-        }
-
-        public void close() {
-            responseObserver.onCompleted();
-        }
-    }
 }

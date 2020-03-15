@@ -1,10 +1,26 @@
 import React, {useState} from "react";
-import {Button, Card, Col, ConfigProvider, Empty, Form, Input, InputNumber, message, Modal, Row, Table} from "antd";
+import {
+  Badge,
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  ConfigProvider,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Modal,
+  Row,
+  Table,
+} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
 import request from 'umi-request';
 import {ExclamationCircleOutlined, ToolOutlined} from "@ant-design/icons/lib";
+import {CheckboxChangeEvent} from "antd/es/checkbox";
 
 const {confirm} = Modal;
 
@@ -13,16 +29,18 @@ interface SupervisorInfo {
   host: string,
   port: number,
   path: string,
+  status: string,
 }
 
 const customizeRenderEmpty = () => (
-  <div style={{ textAlign: 'center' }}>
+  <div style={{textAlign: 'center'}}>
     {Empty.PRESENTED_IMAGE_SIMPLE}
     <p>No Data Found</p>
   </div>
 );
 
-const AgentList: React.FC = () => {
+const SupervisorList: React.FC = () => {
+
   const removeSingleSupervisorRequest = useRequest((record: SupervisorInfo) => ({
     url: `/api/supervisors/${record.id}`,
     method: "delete",
@@ -56,6 +74,22 @@ const AgentList: React.FC = () => {
       dataIndex: "id"
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      render: (text: string) => {
+        switch (text) {
+          case "READY":
+            return <Badge status={"success"} text={text}/>;
+          case "RUNNING":
+            return <Badge status={"processing"} text={text}/>;
+          case "ERRORED":
+            return <Badge status={"error"} text={text}/>
+          default:
+            return <Badge status={"warning"} text={"UNKNOWN"}/>
+        }
+      }
+    },
+    {
       title: 'Host',
       dataIndex: 'host',
     },
@@ -77,6 +111,15 @@ const AgentList: React.FC = () => {
     }
   ];
 
+  const getSupervisorTableData = () => request.get('/api/supervisors')
+    .then(function (response) {
+      return {
+        total: response.data.total,
+        list: response.data.data
+      }
+    })
+  ;
+
   const supervisorTableRequest = useRequest(({current, pageSize, sorter: s, filters: f}) => {
     const p: any = {current, pageSize};
     if (s?.field && s?.order) {
@@ -88,23 +131,16 @@ const AgentList: React.FC = () => {
       });
     }
     // console.log(p);
-    return request.get('/api/supervisors').then(function (response) {
-      // console.log(response);
-      return {
-        total: response.data.total,
-        list: response.data.data
-      }
-    })
+    return getSupervisorTableData();
   }, {
     paginated: true,
-    defaultPageSize: 20
+    defaultPageSize: 1,
+    pollingInterval: 3000
   });
-
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<any>([]);
 
   const onSelectChange = (selectedRowKeys: any) => {
-    // console.log('selectedRowKeys changed: ', selectedRowKeys);
     setSelectedRowKeys(selectedRowKeys);
   };
 
@@ -120,7 +156,7 @@ const AgentList: React.FC = () => {
     setAddSupervisorModalVisible(true)
   };
 
-  const [addAgentForm] = useForm();
+  const [addSupervisorForm] = useForm();
 
   const onAddSupervisorModalCancel = () => {
     setAddSupervisorModalVisible(false);
@@ -149,9 +185,8 @@ const AgentList: React.FC = () => {
 
   const onAddSupervisorModalOk = () => {
 
-    addAgentForm.validateFields().then(value => {
-      // setAddSupervisorModalVisible(false);
-      addSupervisorRequest.run(addAgentForm)
+    addSupervisorForm.validateFields().then(value => {
+      addSupervisorRequest.run(addSupervisorForm)
 
     }).catch(info => console.log("validate failed", info));
   };
@@ -193,6 +228,15 @@ const AgentList: React.FC = () => {
     });
   };
 
+  const onAutoRefreshChange = (e: CheckboxChangeEvent) => {
+
+    if (e.target.checked) {
+      supervisorTableRequest.refresh();
+    } else {
+      supervisorTableRequest.cancel();
+    }
+  };
+
   return (
     <PageHeaderWrapper>
       <Card>
@@ -210,8 +254,8 @@ const AgentList: React.FC = () => {
           </Col>
 
           <Col>
-            <Button onClick={supervisorTableRequest.refresh} style={{marginRight: 8}}>Refresh</Button>
-            <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined />Deploy Supervisor</Button>
+            <Checkbox defaultChecked={true} onChange={onAutoRefreshChange}>Auto Refresh</Checkbox>
+            <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined/>Deploy Supervisor</Button>
             <Modal
               title="Supervisor Deploy Options"
               visible={addSupervisorModalVisible}
@@ -220,7 +264,7 @@ const AgentList: React.FC = () => {
               okButtonProps={{loading: addSupervisorRequest.loading}}
               // wrapProps={{style: {pointerEvents: "none"}}}
             >
-              <Form form={addAgentForm}
+              <Form form={addSupervisorForm}
                     labelCol={{lg: 5}}
                     wrapperCol={{lg: 18}}
                     initialValues={addSupervisorInitialValues}
@@ -249,7 +293,7 @@ const AgentList: React.FC = () => {
           <Col span={24}>
             <ConfigProvider renderEmpty={customizeRenderEmpty}>
               <Table rowSelection={rowSelection} columns={columns}
-                     rowKey={"id"} {...supervisorTableRequest.tableProps}/>
+                     rowKey={"id"} {...supervisorTableRequest.tableProps} />
             </ConfigProvider>
           </Col>
         </Row>
@@ -258,4 +302,4 @@ const AgentList: React.FC = () => {
   )
 }
 
-export default AgentList;
+export default SupervisorList;

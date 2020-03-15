@@ -1,9 +1,10 @@
 package io.rapidw.loader.master.response;
 
-import lombok.AllArgsConstructor;
+import io.rapidw.loader.master.entity.Supervisor;
+import lombok.Builder;
 import lombok.Getter;
 
-@AllArgsConstructor
+@Builder
 @Getter
 public class SupervisorInfo {
 
@@ -11,4 +12,5 @@ public class SupervisorInfo {
     private String host;
     private int port;
     private String path;
+    private Supervisor.Status status;
 }
