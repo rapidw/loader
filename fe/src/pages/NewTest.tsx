@@ -97,12 +97,6 @@ const NewTest: React.FC = () => {
   return (
     <PageHeaderWrapper>
       <Card>
-        <Typography>
-          <Title level={3}>
-            Test Options
-          </Title>
-        </Typography>
-
         <Form
           {...formItemLayout}
           form={form}

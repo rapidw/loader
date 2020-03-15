@@ -4,6 +4,9 @@ import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
 import request from 'umi-request';
+import {ExclamationCircleOutlined} from "@ant-design/icons/lib";
+
+const { confirm } = Modal;
 
 interface SupervisorInfo {
   id: number,
@@ -13,7 +16,7 @@ interface SupervisorInfo {
 }
 
 const AgentList: React.FC = () => {
-  const removeSupervisorRequest = useRequest((record:SupervisorInfo) => ({
+  const removeSingleSupervisorRequest = useRequest((record:SupervisorInfo) => ({
     url: `/api/supervisors/${record.id}`,
     method:"delete",
   }), {
@@ -26,10 +29,19 @@ const AgentList: React.FC = () => {
     }
   });
 
-
-  const removeSupervisor = (record:SupervisorInfo) => {
-    removeSupervisorRequest.run(record);
-  };
+  const removeMultiSupervisorRequest = useRequest((data: {ids: number[]}) => ({
+    url: `/api/supervisors`,
+    method:"delete",
+    data: data
+  }), {
+    manual: true,
+    onSuccess: (result, params) => {
+      if (result.errorCode == 0) {
+        message.success(`selected supervisors has been removed`);
+        supervisorTableRequest.refresh();
+      }
+    }
+  });
 
   const columns = [
     {
@@ -52,7 +64,7 @@ const AgentList: React.FC = () => {
       title: "Action",
       render: (_:any, record: SupervisorInfo) => (
         <span>
-          <a onClick={() => removeSupervisor(record)}>Remove</a>
+          <a onClick={() => removeSingleConfirm(record)}>Remove</a>
         </span>
       )
     }
@@ -68,9 +80,9 @@ const AgentList: React.FC = () => {
         p[filed] = value;
       });
     }
-    console.log(p);
+    // console.log(p);
     return request.get('/api/supervisors').then(function(response) {
-      console.log(response);
+      // console.log(response);
       return {
         total: response.data.total,
         list: response.data.data
@@ -83,16 +95,6 @@ const AgentList: React.FC = () => {
 
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<any>([]);
-  const [tableLoading, setTableLoading] = useState<boolean>(false);
-
-  const reloadTable = () => {
-    setTableLoading(true);
-    // ajax request after empty completing
-    setTimeout(() => {
-      setTableLoading(false);
-      setSelectedRowKeys([])
-    }, 1000);
-  };
 
   const onSelectChange = (selectedRowKeys: any) => {
     // console.log('selectedRowKeys changed: ', selectedRowKeys);
@@ -107,7 +109,7 @@ const AgentList: React.FC = () => {
 
   const [addSupervisorModalVisible, setAddSupervisorModalVisible] = useState(false);
 
-  const onAddSupervisorButtonClicked = () => {
+  const onDeploySupervisorButtonClicked = () => {
     setAddSupervisorModalVisible(true)
   };
 
@@ -147,13 +149,50 @@ const AgentList: React.FC = () => {
     }).catch(info => console.log("validate failed", info));
   };
 
+  const removeSingleConfirm = (record: SupervisorInfo) => {
+    confirm({
+      title: 'Are you sure remove this supervisor?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'this supervisor will exit',
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        removeSingleSupervisorRequest.run(record);
+      },
+      onCancel() {
+
+      },
+    });
+  };
+
+  const removeMultiConfirm = () => {
+    confirm({
+      title: 'Are you sure remove these supervisors?',
+      icon: <ExclamationCircleOutlined />,
+      content: 'selected supervisors will exit',
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        setSelectedRowKeys([]);
+        removeMultiSupervisorRequest.run({
+          ids:selectedRowKeys
+        });
+      },
+      onCancel() {
+
+      },
+    });
+  };
+
   return (
     <PageHeaderWrapper>
       <Card>
         <Row justify={"space-between"}>
           <Col>
             <div style={{display: "inline-block"}}>
-            <Button onClick={reloadTable} disabled={!hasSelected} loading={tableLoading}>
+            <Button onClick={removeMultiConfirm} disabled={!hasSelected}>
               Remove
             </Button>
 
@@ -165,7 +204,7 @@ const AgentList: React.FC = () => {
 
           <Col>
             <Button onClick={supervisorTableRequest.refresh} style={{marginRight:8}}>Refresh</Button>
-            <Button type="primary" onClick={onAddSupervisorButtonClicked}>Deploy new supervisor</Button>
+            <Button type="primary" onClick={onDeploySupervisorButtonClicked}>Deploy new supervisor</Button>
             <Modal
               title="Supervisor Deploy Options"
               visible={addSupervisorModalVisible}

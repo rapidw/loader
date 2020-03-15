@@ -4,6 +4,7 @@ import io.rapidw.loader.master.config.ApiController;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.SupervisorDeployRequest;
+import io.rapidw.loader.master.request.SupervisorRemoveRequest;
 import io.rapidw.loader.master.response.BaseResponse;
 import io.rapidw.loader.master.response.PagedResponse;
 import io.rapidw.loader.master.response.SupervisorInfo;
@@ -39,6 +40,12 @@ public class SupervisorController {
     @DeleteMapping("/supervisors/{supervisor_id}")
     public BaseResponse delete(@PathVariable("supervisor_id") int id) {
         supervisorService.removeSupervisor(id);
+        return BaseResponse.SUCCESS;
+    }
+
+    @DeleteMapping("/supervisors")
+    public BaseResponse deleteAll(@Valid @RequestBody SupervisorRemoveRequest supervisorRemoveRequest) {
+        supervisorRemoveRequest.getIds().forEach(supervisorService::removeSupervisor);
         return BaseResponse.SUCCESS;
     }
 }
