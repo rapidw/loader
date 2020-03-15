@@ -4,7 +4,7 @@ import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
 import request from 'umi-request';
-import {ExclamationCircleOutlined} from "@ant-design/icons/lib";
+import {ExclamationCircleOutlined, ToolOutlined} from "@ant-design/icons/lib";
 
 const {confirm} = Modal;
 
@@ -211,7 +211,7 @@ const AgentList: React.FC = () => {
 
           <Col>
             <Button onClick={supervisorTableRequest.refresh} style={{marginRight: 8}}>Refresh</Button>
-            <Button type="primary" onClick={onDeploySupervisorButtonClicked}>Deploy new supervisor</Button>
+            <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined />Deploy Supervisor</Button>
             <Modal
               title="Supervisor Deploy Options"
               visible={addSupervisorModalVisible}

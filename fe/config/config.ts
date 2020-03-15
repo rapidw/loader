@@ -88,19 +88,19 @@ export default {
         {
           path: '/dashboard',
           name: 'Dashboard',
-          icon: 'smile',
+          icon: 'DashboardOutlined',
           component: './Dashboard',
         },
         {
           path: '/start',
           name: 'Start New Test',
-          icon: 'smile',
+          icon: 'ExperimentOutlined',
           component: './NewTest',
         },
         {
           path: '/supervisors',
           name: 'Supervisors',
-          icon: 'smile',
+          icon: 'ControlOutlined',
           component: './Supervisors',
         },
         // {

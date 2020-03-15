@@ -1,5 +1,5 @@
 import React, {useRef, useState} from "react";
-import {Button, Card, Col, Form, InputNumber, Modal, Row, Select, Transfer, Typography, Upload} from "antd";
+import {Button, Card, Col, Form, InputNumber, Modal, Row, Select, Transfer, Upload} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {CopyOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import styles from "./NewTest.less";
@@ -7,33 +7,26 @@ import ReactResizeDetector from "react-resize-detector"
 import AceEditor from "react-ace";
 import ReactAce from "react-ace";
 
-const {Title} = Typography;
 const {Option} = Select;
 
+// xl: 768p
+// xxl: 1080p and above
 const formItemLayout = {
   labelCol: {
-    xs: {span: 24},
-    sm: {span: 5},
+    xl: {span: 4},
+    xxl: {span: 5}
 
   },
   wrapperCol: {
-    xs: {span: 24},
-    sm: {span: 16},
-    md: {span: 18},
-    lg: {span: 12},
-    xl: {span: 16},
-    xxl: {span: 12},
+    xl: {span: 20},
+    xxl: {span: 14},
   },
 };
 
 const buttonLayout = {
   wrapperCol: {
-    xs: {span: 24},
-    sm: {span: 21},
-    md: {span: 23},
-    lg: {span: 17},
-    xl: {span: 21},
-    xxl: {span: 17},
+    xl: {span: 24},
+    xxl: {span: 19},
   }
 };
 

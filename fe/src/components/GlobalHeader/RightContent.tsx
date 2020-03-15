@@ -5,6 +5,7 @@ import { ConnectProps, ConnectState } from '@/models/connect';
 import styles from './index.less';
 import { GithubOutlined } from '@ant-design/icons'
 import { IconFont } from '@/utils/iconfont'
+import {ReadOutlined} from "@ant-design/icons/lib";
 
 export type SiderTheme = 'light' | 'dark';
 export interface GlobalHeaderRightProps extends ConnectProps {
@@ -45,7 +46,7 @@ const GlobalHeaderRight: React.SFC<GlobalHeaderRightProps> = props => {
           rel="noopener noreferrer"
           className={styles.action}
         >
-          <IconFont type="icon-wiki" style={{fontSize:"24px"}}/>
+          <ReadOutlined style={{fontSize:"24px"}}/>
         </a>
       </Tooltip>
       {REACT_APP_ENV && (
@@ -60,7 +61,7 @@ const GlobalHeaderRight: React.SFC<GlobalHeaderRightProps> = props => {
           rel="noopener noreferrer"
           className={styles.action}
         >
-          <IconFont type="icon-issue-copy" style={{fontSize:"24px"}}/>
+          <IconFont type="icon-issue1" style={{fontSize:"24px"}}/>
         </a>
       </Tooltip>
       {REACT_APP_ENV && (

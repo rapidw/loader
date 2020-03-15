@@ -20,7 +20,7 @@ const Dashboard: React.FC = () => {
 
   const startTime = 1583596696795;
   const finishTime = 1583596717807;
-  const timeFormat = "YYYY-MM-DD HH:mm:ss";
+  const timeFormat = "MM-DD HH:mm:ss";
 
   const throughputScale = {
     time: {
@@ -208,18 +208,21 @@ const Dashboard: React.FC = () => {
             Task Info
           </Title>
         </Typography>
-        <Descriptions bordered>
+        <Descriptions bordered column={3}>
           <Descriptions.Item label="Running">
             <Badge status={taskStatus.status} text={taskStatus.text}/>
           </Descriptions.Item>
           <Descriptions.Item label="Start Time">{moment(startTime).format(timeFormat)}</Descriptions.Item>
           <Descriptions.Item label="Finish Time">{moment(finishTime).format(timeFormat)}</Descriptions.Item>
-          <Descriptions.Item label="Max Throughput(RPS)">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Min Throughput(RPS)">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Throughput P99">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Response Time Max(ms)">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Response Time Min(ms)">Cloud Database</Descriptions.Item>
-          <Descriptions.Item label="Response Time P99(ms)">Cloud Database</Descriptions.Item>
+          <Descriptions.Item label="Occupied Agents">2</Descriptions.Item>
+          <Descriptions.Item label="RPS Max(RPS)">400</Descriptions.Item>
+          <Descriptions.Item label="PRS Min(RPS)">100</Descriptions.Item>
+          <Descriptions.Item label="PRS Mean(RPS)">250</Descriptions.Item>
+          <Descriptions.Item label="PRS P99(RPS)">300</Descriptions.Item>
+          <Descriptions.Item label="Response Time Max(ms)">400</Descriptions.Item>
+          <Descriptions.Item label="Response Time Min(ms)">100</Descriptions.Item>
+          <Descriptions.Item label="Response Time Mean(ms)">250</Descriptions.Item>
+          <Descriptions.Item label="Response Time P99(ms)">300</Descriptions.Item>
 
         </Descriptions>
 
