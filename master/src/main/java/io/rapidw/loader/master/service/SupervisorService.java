@@ -120,7 +120,6 @@ public class SupervisorService {
                 supervisorInfoList.add(SupervisorInfo.builder()
                     .id(i)
                     .host(inetAddress.getAddress().getHostAddress())
-                    .port(inetAddress.getPort())
                     .path(current.getPath())
                     .status(current.getStatus())
                     .build()

@@ -10,15 +10,14 @@ import {
   Form,
   Input,
   InputNumber,
-  message,
-  Modal,
+  Modal, notification,
   Row,
   Table,
 } from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {useForm} from "antd/es/form/util";
 import {useRequest} from "@umijs/hooks";
-import request from 'umi-request';
+import request from '@/utils/request';
 import {ExclamationCircleOutlined, ToolOutlined} from "@ant-design/icons/lib";
 import {CheckboxChangeEvent} from "antd/es/checkbox";
 
@@ -27,19 +26,19 @@ const {confirm} = Modal;
 interface SupervisorInfo {
   id: number,
   host: string,
-  port: number,
   path: string,
   status: string,
 }
 
 const customizeRenderEmpty = () => (
-  <div style={{textAlign: 'center'}}>
+  <div style={{textAlign: 'center', marginTop: "8px" }}>
     {Empty.PRESENTED_IMAGE_SIMPLE}
     <p>No Data Found</p>
   </div>
 );
 
 const SupervisorList: React.FC = () => {
+  const [checkboxState, setCheckboxState] = useState(true);
 
   const removeSingleSupervisorRequest = useRequest((record: SupervisorInfo) => ({
     url: `/api/supervisors/${record.id}`,
@@ -48,8 +47,8 @@ const SupervisorList: React.FC = () => {
     manual: true,
     onSuccess: (result, params) => {
       if (result.errorCode == 0) {
-        message.success(`new supervisor ${params[0].host}:${params[0].port} removed`);
-        supervisorTableRequest.refresh();
+        notification.success({message: `new supervisor ${params[0].host}:${params[0].path} removed`});
+        supervisorListRequest.refresh();
       }
     }
   });
@@ -62,8 +61,8 @@ const SupervisorList: React.FC = () => {
     manual: true,
     onSuccess: (result, params) => {
       if (result.errorCode == 0) {
-        message.success(`selected supervisors has been removed`);
-        supervisorTableRequest.refresh();
+        notification.success({message: `selected supervisors has been removed`});
+        supervisorListRequest.refresh();
       }
     }
   });
@@ -94,10 +93,6 @@ const SupervisorList: React.FC = () => {
       dataIndex: 'host',
     },
     {
-      title: 'Port',
-      dataIndex: 'port',
-    },
-    {
       title: "Path",
       dataIndex: "path"
     },
@@ -111,16 +106,7 @@ const SupervisorList: React.FC = () => {
     }
   ];
 
-  const getSupervisorTableData = () => request.get('/api/supervisors')
-    .then(function (response) {
-      return {
-        total: response.data.total,
-        list: response.data.data
-      }
-    })
-  ;
-
-  const supervisorTableRequest = useRequest(({current, pageSize, sorter: s, filters: f}) => {
+  const supervisorListRequest = useRequest(({current, pageSize, sorter: s, filters: f}) => {
     const p: any = {current, pageSize};
     if (s?.field && s?.order) {
       p[s.field] = s.order;
@@ -131,11 +117,22 @@ const SupervisorList: React.FC = () => {
       });
     }
     // console.log(p);
-    return getSupervisorTableData();
+    return request.get('/api/supervisors')
+      .then(response => {
+        return {
+          total: response.data.total,
+          list: response.data.data
+        }
+      })
+      ;
   }, {
     paginated: true,
     defaultPageSize: 1,
-    pollingInterval: 3000
+    pollingInterval: 3000,
+    onError: () => {
+      setCheckboxState(false);
+      supervisorListRequest.cancel()
+    }
   });
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<any>([]);
@@ -177,9 +174,12 @@ const SupervisorList: React.FC = () => {
     onSuccess: (result, params) => {
       if (result.errorCode == 0) {
         setAddSupervisorModalVisible(false);
-        message.success(`new supervisor ${params[0].getFieldValue("host")}:${params[0].getFieldValue("port")} deployed`);
-        supervisorTableRequest.refresh()
+        notification.success({message:`new supervisor ${params[0].getFieldValue("host")}:${params[0].getFieldValue("path")} deployed`});
+        supervisorListRequest.refresh()
       }
+    },
+    onError: () => {
+      notification.error({message: "deploy new supervisor error"})
     }
   });
 
@@ -228,12 +228,13 @@ const SupervisorList: React.FC = () => {
     });
   };
 
-  const onAutoRefreshChange = (e: CheckboxChangeEvent) => {
 
+  const onAutoRefreshChange = (e: CheckboxChangeEvent) => {
+    setCheckboxState(e.target.checked);
     if (e.target.checked) {
-      supervisorTableRequest.refresh();
+      supervisorListRequest.refresh();
     } else {
-      supervisorTableRequest.cancel();
+      supervisorListRequest.cancel();
     }
   };
 
@@ -254,7 +255,7 @@ const SupervisorList: React.FC = () => {
           </Col>
 
           <Col>
-            <Checkbox defaultChecked={true} onChange={onAutoRefreshChange}>Auto Refresh</Checkbox>
+            <Checkbox checked={checkboxState} onChange={onAutoRefreshChange}>Auto Refresh</Checkbox>
             <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined/>Deploy Supervisor</Button>
             <Modal
               title="Supervisor Deploy Options"
@@ -293,7 +294,7 @@ const SupervisorList: React.FC = () => {
           <Col span={24}>
             <ConfigProvider renderEmpty={customizeRenderEmpty}>
               <Table rowSelection={rowSelection} columns={columns}
-                     rowKey={"id"} {...supervisorTableRequest.tableProps} />
+                     rowKey={"id"} {...supervisorListRequest.tableProps} />
             </ConfigProvider>
           </Col>
         </Row>

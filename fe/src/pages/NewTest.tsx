@@ -1,13 +1,22 @@
 import React, {useRef, useState} from "react";
-import {Button, Card, Col, Form, InputNumber, Modal, Row, Select, Transfer, Upload} from "antd";
+import {Button, Card, Col, ConfigProvider, Empty, Form, InputNumber, Modal, Row, Select, Transfer, Upload} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
 import {CopyOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import styles from "./NewTest.less";
 import ReactResizeDetector from "react-resize-detector"
 import AceEditor from "react-ace";
 import ReactAce from "react-ace";
+import {useRequest} from "@umijs/hooks";
+import {TransferItem} from "antd/es/transfer";
 
 const {Option} = Select;
+
+const customizeRenderEmpty = () => (
+  <div style={{textAlign: 'center'}}>
+    {Empty.PRESENTED_IMAGE_SIMPLE}
+    <p>No Data Found</p>
+  </div>
+);
 
 // xl: 768p
 // xxl: 1080p and above
@@ -34,22 +43,27 @@ const tailLayout = {
   wrapperCol: {span: 24},
 };
 
-const mockData: any = [];
-for (let i = 0; i < 20; i++) {
-  mockData.push({
-    key: i.toString(),
-    title: `content${i + 1}rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr`,
-    description: `description of content${i + 1}`,
-    disabled: i % 3 < 1,
-  });
-}
 
 const NewTest: React.FC = () => {
 
   const [MasterOptions, setMasterOptions] = useState("");
 
-  // const [editor1Width, setEditor1Width] = useState("");
-  // const [editor2Width, setEditor2Width] = useState("");
+  const [targetSupervisors, setTargetSupervisors] = useState<string[]>([]);
+
+  const supervisorListRequest= useRequest("/api/supervisors", {
+    formatResult: (response) => {
+      let data:TransferItem[] = [];
+
+      response.data.data.forEach( (v:any) => {
+        data.push({
+          key: v.id,
+          title: `${v.host}:${v.path}`
+        })
+      });
+
+      return data
+    }
+  });
 
   const children = [];
   for (let i = 10; i < 36; i++) {
@@ -85,7 +99,7 @@ const NewTest: React.FC = () => {
 
   const onEditor1Change = (value: string) => {
     setMasterOptions(value);
-  }
+  };
 
   return (
     <PageHeaderWrapper>
@@ -108,13 +122,14 @@ const NewTest: React.FC = () => {
           <Form.Item name="perAgentTotalLimit" label="per Agent Total Limit" rules={[{type: "number", min: 0}]}>
             <InputNumber defaultValue={0}/>
           </Form.Item>
-          <Form.Item name="agents" label="Agents">
-
+          <Form.Item name="supervisors" label="Supervisors">
+            <ConfigProvider renderEmpty={customizeRenderEmpty}>
             <Transfer
-              dataSource={mockData}
+              dataSource={supervisorListRequest.data}
+              onChange={(targetKeys) => setTargetSupervisors(targetKeys)}
+              targetKeys={targetSupervisors}
               titles={['Available', 'Selected']}
               className={styles.customTransfer}
-              showSearch
               showSelectAll
               // targetKeys={targetKeys}
               // selectedKeys={selectedKeys}
@@ -124,6 +139,7 @@ const NewTest: React.FC = () => {
               render={item => item.title != null ? item.title : ""}
               // style={{height: "900px"}}
             />
+            </ConfigProvider>
           </Form.Item>
           <Form.Item label="Master Options" required>
             <div style={{

@@ -10,7 +10,6 @@ public class SupervisorInfo {
 
     private int id;
     private String host;
-    private int port;
     private String path;
     private Supervisor.Status status;
 }
