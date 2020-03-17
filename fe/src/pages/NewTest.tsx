@@ -1,13 +1,18 @@
 import React, {useRef, useState} from "react";
 import {Button, Card, Col, ConfigProvider, Empty, Form, InputNumber, Modal, Row, Select, Transfer, Upload} from "antd";
 import {PageHeaderWrapper} from '@ant-design/pro-layout';
-import {CopyOutlined, UploadOutlined} from "@ant-design/icons/lib";
-import styles from "./NewTest.less";
-import ReactResizeDetector from "react-resize-detector"
-import AceEditor from "react-ace";
-import ReactAce from "react-ace";
+import {CopyOutlined, PoweroffOutlined, RocketOutlined, SettingOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import {useRequest} from "@umijs/hooks";
 import {TransferItem} from "antd/es/transfer";
+import styles from "./NewTest.less";
+import ReactResizeDetector from "react-resize-detector"
+import "ace-builds";
+import AceEditor from "react-ace";
+import ReactAce from "react-ace";
+import "ace-builds/webpack-resolver";
+import "ace-builds/src-noconflict/mode-json"
+import "ace-builds/src-noconflict/theme-monokai";
+import 'ace-builds/src-noconflict/ext-language_tools';
 
 const {Option} = Select;
 
@@ -111,7 +116,7 @@ const NewTest: React.FC = () => {
           onFinish={onFinish}
         >
           <Form.Item {...buttonLayout} style={{textAlign: "right"}}>
-            <Button type="primary" onClick={handleReuse}>Re-use last test options</Button>
+            <Button type="primary" onClick={handleReuse}><SettingOutlined />Re-use last test options</Button>
           </Form.Item>
           <Form.Item name="throughLimit" label="Throughput Limit(RPS)" rules={[{type: "number", min: 0}]}>
             <InputNumber value={10}/>
@@ -165,7 +170,7 @@ const NewTest: React.FC = () => {
 
               <AceEditor
                 mode="json"
-                theme="github"
+                theme="monokai"
                 width={"100%"}
                 height={"100%"}
                 fontSize={14}
@@ -195,7 +200,7 @@ const NewTest: React.FC = () => {
               style={{border: "1px solid #eee", height: "300px", width: "100%"}}>
               <AceEditor
                 mode="json"
-                theme="github"
+                theme="monokai"
                 width={"100%"}
                 height={"100%"}
                 fontSize={14}
@@ -266,7 +271,7 @@ const NewTest: React.FC = () => {
 
                         <AceEditor
                           mode="json"
-                          theme="github"
+                          theme="monokai"
                           // width={modalWidth}
                           fontSize={14}
                           showPrintMargin={false}
@@ -294,8 +299,8 @@ const NewTest: React.FC = () => {
 
 
           <Form.Item {...tailLayout} style={{textAlign: "center"}}>
-            <Button type="primary" htmlType="submit">
-              Submit
+            <Button type="primary" htmlType="submit" icon={<PoweroffOutlined />}>
+              START
             </Button>
           </Form.Item>
         </Form>
