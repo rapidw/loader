@@ -52,6 +52,7 @@ const tailLayout = {
 const NewTest: React.FC = () => {
 
   const [MasterOptions, setMasterOptions] = useState("");
+  const [AgentOptions, setAgentOptions] = useState("");
 
   const [targetSupervisors, setTargetSupervisors] = useState<string[]>([]);
 
@@ -104,6 +105,10 @@ const NewTest: React.FC = () => {
 
   const onEditor1Change = (value: string) => {
     setMasterOptions(value);
+  };
+
+  const onAgentOptionsEditorChange = (value: string) => {
+    setAgentOptions(value);
   };
 
   return (
@@ -207,7 +212,7 @@ const NewTest: React.FC = () => {
                 showPrintMargin={false}
                 showGutter={true}
                 highlightActiveLine={true}
-                value={MasterOptions}
+                value={AgentOptions}
                 setOptions={{
                   enableBasicAutocompletion: false,
                   enableLiveAutocompletion: false,
@@ -215,6 +220,7 @@ const NewTest: React.FC = () => {
                   showLineNumbers: true,
                   tabSize: 2,
                 }}
+                onChange={onAgentOptionsEditorChange}
                 ref={editor2}
               />
             </div>
@@ -222,18 +228,19 @@ const NewTest: React.FC = () => {
 
 
           <Form.Item label="Agent Config" required>
-            <Row>
-              <Col>
+            <div style={{display:"flex"}} >
+            {/*<Row>*/}
+            {/*  <Col>*/}
                 <Upload>
                   <Button>
                     <UploadOutlined/> Upload
                   </Button>
                 </Upload>
-              </Col>
-              <Col>
-                <span style={{marginLeft: "10px", marginRight: "10px"}}> or </span>
-              </Col>
-              <Col>
+              {/*</Col>*/}
+              {/*<Col>*/}
+                <span style={{marginLeft: "10px", marginRight: "10px", alignSelf: "center"}}> or </span>
+              {/*</Col>*/}
+              {/*<Col>*/}
                 <div>
                   <Button onClick={showModal}>
                     <CopyOutlined/> Paste
@@ -261,9 +268,9 @@ const NewTest: React.FC = () => {
                         handleHeight
                         onResize={(width: number) => {
 
-                          console.log(modalEditor.current);
+                          // console.log(modalEditor.current);
                           if (modalEditor.current) {
-                            console.log("resize");
+                            // console.log("resize");
                             modalEditor.current.editor.resize();
                             setModalWidth(width + 48);
                           }
@@ -292,9 +299,10 @@ const NewTest: React.FC = () => {
                   </Modal>
 
                 </div>
-              </Col>
+              {/*</Col>*/}
 
-            </Row>
+            {/*</Row>*/}
+      </div>
           </Form.Item>
 
 

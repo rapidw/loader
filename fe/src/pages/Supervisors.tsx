@@ -10,7 +10,8 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal, notification,
+  Modal,
+  notification,
   Row,
   Table,
 } from "antd";
@@ -31,7 +32,7 @@ interface SupervisorInfo {
 }
 
 const customizeRenderEmpty = () => (
-  <div style={{textAlign: 'center', marginTop: "8px" }}>
+  <div style={{textAlign: 'center', marginTop: "8px"}}>
     {Empty.PRESENTED_IMAGE_SIMPLE}
     <p>No Data Found</p>
   </div>
@@ -174,7 +175,7 @@ const SupervisorList: React.FC = () => {
     onSuccess: (result, params) => {
       if (result.errorCode == 0) {
         setAddSupervisorModalVisible(false);
-        notification.success({message:`new supervisor ${params[0].getFieldValue("host")}:${params[0].getFieldValue("path")} deployed`});
+        notification.success({message: `new supervisor ${params[0].getFieldValue("host")}:${params[0].getFieldValue("path")} deployed`});
         supervisorListRequest.refresh()
       }
     },
@@ -255,8 +256,10 @@ const SupervisorList: React.FC = () => {
           </Col>
 
           <Col>
-            <Checkbox checked={checkboxState} onChange={onAutoRefreshChange}>Auto Refresh</Checkbox>
-            <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined/>Deploy Supervisor</Button>
+            <div style={{textAlign: "right"}}>
+              <Checkbox checked={checkboxState} onChange={onAutoRefreshChange}>Auto Refresh</Checkbox>
+              <Button type="primary" onClick={onDeploySupervisorButtonClicked}><ToolOutlined/>Deploy Supervisor</Button>
+            </div>
             <Modal
               title="Supervisor Deploy Options"
               visible={addSupervisorModalVisible}
