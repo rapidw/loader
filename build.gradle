@@ -302,7 +302,8 @@ project(":supervisor") {
         group "build"
         dependsOn build
         from "${buildDir}/libs"
-        into "${project(":master").buildDir}/reources/main"
+        into "${project(":master").buildDir}/resources/main"
+        rename {filename -> "supervisor.jar"}
     }
 }
 

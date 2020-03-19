@@ -23,5 +23,5 @@ $ gradlew build
 ```
 you can find Jar in `master/build/libs/`
 ```shell script
-java -jar path_to_jar
+$ java -jar path_to_jar
 ```
