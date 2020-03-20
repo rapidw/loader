@@ -7,7 +7,7 @@ import java.util.Map;
 @Data
 public class TestingOuterRequest {
 
-    private TestingStartRequest master;
+    private TestingConfigRequest master;
     private Map<String, Object> agent;
     private Map<String, Object> strategy;
 }

@@ -4,7 +4,7 @@ import io.rapidw.loader.api.TestStrategy;
 import io.rapidw.loader.common.utils.JarStreamClassLoader;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
-import io.rapidw.loader.master.request.TestingStartRequest;
+import io.rapidw.loader.master.request.TestingConfigRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -29,15 +29,15 @@ public class TestingService {
     private TestStrategy masterTestStratedy;
     private final SupervisorService supervisorService;
 
-    public void start(TestingStartRequest testingStartRequest, byte[] agentParamsBytes, byte[] strategyConfigBytes, byte[] jarBytes) throws IOException {
+    public void start(TestingConfigRequest testingConfigRequest, byte[] agentParamsBytes, byte[] strategyConfigBytes, byte[] jarBytes) throws IOException {
         if (running) {
             throw new AppException(AppStatus.SYSTEM_ERROR, "another test is running");
         }
 
-        this.agentCount = testingStartRequest.getAgentCount();
-        this.rpsLimit = testingStartRequest.getRpsLimit();
-        this.perAgentTotalLimit = testingStartRequest.getPerAgentTotalLimit();
-        this.durationLimit = testingStartRequest.getDurationLimit();
+        this.agentCount = testingConfigRequest.getSupervisorsIds().size();
+        this.rpsLimit = testingConfigRequest.getThroughputLimit();
+        this.perAgentTotalLimit = testingConfigRequest.getPerAgentTotalLimit();
+        this.durationLimit = testingConfigRequest.getDurationLimit();
 
         JarStreamClassLoader classLoader = new JarStreamClassLoader(new JarInputStream(new ByteArrayInputStream(jarBytes)), this.getClass().getClassLoader());
         this.masterTestStratedy = ServiceLoader.load(TestStrategy.class, classLoader).iterator().next();
