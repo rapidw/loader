@@ -4,18 +4,20 @@ import io.rapidw.loader.api.TestStats;
 import io.rapidw.loader.api.TestStrategy;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
 public class MyTestStrategy implements TestStrategy {
     @Override
-    public void init(byte[] strategyConfigBytes) {
+    public void init(String strategyParamsBytes) {
 
+        log.info("init");
     }
 
     @Override
     public List<byte[]> generateAgentConfig(int agentCount, int perAgentTotal) {
-        return null;
+        return Collections.singletonList(new byte[] {0});
     }
 
     @Override

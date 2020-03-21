@@ -10,15 +10,15 @@ public interface Agent {
     void config(byte[] agentParamsBytes, byte[] agentConfigBytes);
 
     /**
-     * 开始一轮测试，此方法不能被阻塞
-     * @param roundReporter 汇报器
+     * start a new round, this method must not be blocked
+     * @param roundReporter reporter
      */
     void roundStart(RoundReporter roundReporter);
 
     /**
      * 停止所有测试
      */
-    void stop();
+    void stop(StopCallback stopCallback);
 
     /**
      * 重新初始化

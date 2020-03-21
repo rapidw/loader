@@ -2,6 +2,7 @@ package io.rapidw.loader.master.service;
 
 import io.rapidw.loader.api.TestStrategy;
 import io.rapidw.loader.common.utils.JarStreamClassLoader;
+import io.rapidw.loader.master.entity.Testing;
 import io.rapidw.loader.master.exception.AppException;
 import io.rapidw.loader.master.exception.AppStatus;
 import io.rapidw.loader.master.request.TestingConfigRequest;
@@ -20,37 +21,39 @@ public class TestingService {
         this.supervisorService = supervisorService;
     }
 
-    public enum Mode {BURST, CONTINUOUS}
-    private volatile boolean running = false;
-    private Integer agentCount;
-    private int rpsLimit;
-    private Integer perAgentTotalLimit;
-    private Integer durationLimit;
+    private Testing testing;
     private TestStrategy masterTestStratedy;
     private final SupervisorService supervisorService;
 
-    public void start(TestingConfigRequest testingConfigRequest, byte[] agentParamsBytes, byte[] strategyConfigBytes, byte[] jarBytes) throws IOException {
-        if (running) {
+    public void start(TestingConfigRequest testingConfigRequest, String StrategyParams, byte[] agentParamsBytes, byte[] jarBytes) throws IOException {
+        if (testing != null && testing.isRunning()) {
             throw new AppException(AppStatus.SYSTEM_ERROR, "another test is running");
         }
 
-        this.agentCount = testingConfigRequest.getSupervisorsIds().size();
-        this.rpsLimit = testingConfigRequest.getThroughputLimit();
-        this.perAgentTotalLimit = testingConfigRequest.getPerAgentTotalLimit();
-        this.durationLimit = testingConfigRequest.getDurationLimit();
+        this.testing = new Testing();
+        this.testing.setOccupiedSupervisors(testingConfigRequest.getSupervisorIds());
+        this.testing.setRpsLimit(testingConfigRequest.getRpsLimit());
+        this.testing.setPerAgentTotalLimit(testingConfigRequest.getPerAgentTotalLimit());
+        this.testing.setDurationLimit(testingConfigRequest.getDurationLimit());
 
         JarStreamClassLoader classLoader = new JarStreamClassLoader(new JarInputStream(new ByteArrayInputStream(jarBytes)), this.getClass().getClassLoader());
         this.masterTestStratedy = ServiceLoader.load(TestStrategy.class, classLoader).iterator().next();
 
-        this.masterTestStratedy.init(strategyConfigBytes);
+        this.masterTestStratedy.init(StrategyParams);
 
-        supervisorService.configSupervisor(agentCount, this.rpsLimit, this.perAgentTotalLimit, this.durationLimit);
+        supervisorService.configSupervisor(testingConfigRequest.getSupervisorIds(), testingConfigRequest.getRpsLimit(),
+            testingConfigRequest.getDurationLimit(), testingConfigRequest.getPerAgentTotalLimit());
 
         supervisorService.loadAgent(jarBytes);
 
-        List<byte[]> agentConfigBytes = this.masterTestStratedy.generateAgentConfig(this.agentCount, this.perAgentTotalLimit);
+        List<byte[]> agentConfigBytes = this.masterTestStratedy.generateAgentConfig(
+            testingConfigRequest.getSupervisorIds().size(), testingConfigRequest.getPerAgentTotalLimit());
         supervisorService.configAgent(agentParamsBytes, agentConfigBytes);
 
         supervisorService.startAgent();
+    }
+
+    public Testing get() {
+        return testing;
     }
 }

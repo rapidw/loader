@@ -6,9 +6,9 @@ public interface TestStrategy {
 
     /**
      * 1.生成context
-     * @param strategyConfigBytes 数据
+     * @param strategyParamsBytes 数据
      */
-    void init(byte[] strategyConfigBytes);
+    void init(String strategyParamsBytes);
 
     /**
      * 生成agent设置

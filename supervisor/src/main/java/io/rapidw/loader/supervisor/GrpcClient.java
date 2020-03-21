@@ -1,11 +1,11 @@
 package io.rapidw.loader.supervisor;
 
 
-import io.rapidw.loader.common.gen.LoaderServiceGrpc;
-import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import io.rapidw.loader.common.gen.LoaderServiceGrpc;
+import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,19 +14,22 @@ import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 public class GrpcClient {
-    private final AppConfig appConfig;
+    private final SupervisorConfig supervisorConfig;
+    private final MasterConfig masterConfig;
     private StreamObserver<LoaderServiceOuterClass.SupervisorMessage> requestObserver;
     private final Supervisor supervisor;
 
-    public GrpcClient(AppConfig appConfig, Supervisor supervisor) {
-        this.appConfig = appConfig;
+
+    public GrpcClient(SupervisorConfig supervisorConfig, MasterConfig masterConfig, Supervisor supervisor) {
+        this.supervisorConfig = supervisorConfig;
+        this.masterConfig = masterConfig;
         this.supervisor = supervisor;
     }
 
     public void start() throws Exception {
         CountDownLatch finishLatch = new CountDownLatch(1);
 
-        Channel channel = ManagedChannelBuilder.forAddress(appConfig.getGrpcServer().getHost(), appConfig.getGrpcServer().getPort())
+        Channel channel = ManagedChannelBuilder.forAddress(masterConfig.getHost(), masterConfig.getPort())
             .usePlaintext().build();
         LoaderServiceGrpc.LoaderServiceStub stub = LoaderServiceGrpc.newStub(channel);
         StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver = new StreamObserver<LoaderServiceOuterClass.MasterMessage>() {
@@ -38,11 +41,13 @@ public class GrpcClient {
             @Override
             public void onError(Throwable t) {
                 log.error("onError", t);
+                supervisor.stop();
                 finishLatch.countDown();
             }
 
             @Override
             public void onCompleted() {
+                supervisor.stop();
                 log.info("master closed connection, exit");
                 finishLatch.countDown();
             }
@@ -50,9 +55,9 @@ public class GrpcClient {
 
         requestObserver = stub.loaderChat(responseObserver);
         // supervisor向master发送RegisterReq，注册
-        log.info("registering to master {}:{}", appConfig.getGrpcServer().getHost(), appConfig.getGrpcServer().getPort());
+        log.info("registering to master {}:{}", masterConfig.getHost(), masterConfig.getPort());
         requestObserver.onNext(LoaderServiceOuterClass.SupervisorMessage.newBuilder().
-            setRegisterReq(LoaderServiceOuterClass.RegisterReq.newBuilder().setPath(appConfig.getPath()).build()).build());
+            setRegisterReq(LoaderServiceOuterClass.RegisterReq.newBuilder().setPath(supervisorConfig.getPath()).build()).build());
 
         finishLatch.await();
     }
@@ -99,6 +104,7 @@ public class GrpcClient {
 
     private void onStartReq() {
         log.info("starting");
+        supervisor.start();
     }
 
     public void sendReport(List<LoaderServiceOuterClass.Report> reports) {

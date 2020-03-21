@@ -20,15 +20,16 @@ import org.springframework.stereotype.Service;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.FileSystemNotFoundException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
 public class SupervisorService {
 
-    private List<Supervisor> supervisors = new ArrayList<>();
+    private HashMap<Integer, Supervisor> supervisors = new HashMap<>();
     private List<Supervisor> supervisorsInUse;
 
     private final AppConfig appConfig;
@@ -51,7 +52,7 @@ public class SupervisorService {
             .task(
                 new CommandTask(
                     String.format("nohup /root/%s/bin/java -jar supervisor.jar " +
-                            "--supervisor.grpcServer.host=%s --supervisor.grpcServer.port=%s --supervisor.path=%s > nohup.log 2>&1 </dev/null &",
+                            "--master.host=%s --master.port=%s --supervisor.path=%s > nohup.log 2>&1 </dev/null &",
                         appConfig.getJre().getFolderName(),
                         appConfig.getGrpcServer().getHost(),
                         appConfig.getGrpcServer().getPort(),
@@ -71,7 +72,8 @@ public class SupervisorService {
     }
 
     public void addSupervisor(SocketAddress address, String path, StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver) {
-        supervisors.add(Supervisor.builder().address(address).path(path).status(Supervisor.Status.READY).responseObserver(responseObserver).build());
+        int id = Supervisor.nextId();
+        supervisors.put(id, Supervisor.builder().id(id).address(address).path(path).status(Supervisor.Status.READY).responseObserver(responseObserver).build());
     }
 
     public void removeSupervisor(int id) {
@@ -81,28 +83,44 @@ public class SupervisorService {
     }
 
     public void removeSupervisor(SocketAddress address) {
-
-        int i;
-        for (i = 0; i < supervisors.size(); i++) {
-            if (supervisors.get(i).getAddress().equals(address)) {
-                break;
+        Integer id = null;
+        for (Map.Entry<Integer, Supervisor> entry: this.supervisors.entrySet()) {
+            if (entry.getValue().getAddress().equals(address)) {
+                id = entry.getKey();
             }
         }
-        supervisors.remove(i);
+        if (id != null) {
+            supervisors.remove(id);
+        } else {
+            throw new AppException(AppStatus.INTERNAL_SERVER_ERROR, "remove supervisor which does not exist");
+        }
     }
 
     public void loadAgent(byte[] data) {
         supervisorsInUse.forEach(supervisor -> supervisor.loadAgent(data));
     }
 
-    public void configSupervisor(int agentCount, int qpsLimit, int perAgentTotalLimit, int durationLimit) {
-        this.supervisorsInUse = this.supervisors.subList(0, agentCount);
+    public void configSupervisor(List<Integer> supervisorIds, int qpsLimit, int durationLimit, int perAgentTotalLimit) {
+        this.supervisorsInUse = new LinkedList<>();
+        for (int id: supervisorIds) {
+            Supervisor supervisor = this.supervisors.get(id);
+            if (supervisor == null) {
+                throw new AppException(AppStatus.BAD_REQUEST, "invalid supervisor id");
+            }
+            this.supervisorsInUse.add(this.supervisors.get(id));
+        }
         this.supervisorsInUse.forEach(supervisor -> supervisor.configSupervisor(qpsLimit, perAgentTotalLimit, durationLimit));
     }
 
-    public void configAgent(byte[] agentParamsBytes, List<byte[]> agentConfigBytes) {
-        for (int i = 0; i < supervisorsInUse.size(); i++) {
-            supervisorsInUse.get(i).configAgent(agentParamsBytes, agentConfigBytes.get(i));
+    public void configAgent(byte[] agentParamsBytes, List<byte[]> agentConfigBytesList) {
+        if (agentConfigBytesList != null && agentConfigBytesList.size() == this.supervisorsInUse.size()) {
+            for (int i = 0; i < supervisorsInUse.size(); i++) {
+                supervisorsInUse.get(i).configAgent(agentParamsBytes, agentConfigBytesList.get(i));
+            }
+        } else {
+            for (Supervisor supervisor : supervisorsInUse) {
+                supervisor.configAgent(agentParamsBytes, null);
+            }
         }
     }
 

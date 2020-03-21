@@ -6,6 +6,7 @@ import io.rapidw.loader.master.response.DataResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,8 +85,13 @@ public class TestController {
     }
 
 
-    @GetMapping("/rrr")
-    public BaseResponse get() {
+    @PostMapping("/rrr")
+    public BaseResponse get(ddd d) {
         return BaseResponse.SUCCESS;
+    }
+
+    @lombok.Data
+    public static class ddd {
+        private long a;
     }
 }

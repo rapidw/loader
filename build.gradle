@@ -37,6 +37,7 @@ subprojects {
         commonsMathVersion = '3.6.1'
         commonsIoVersion = '2.6'
         commonsValidatorVersion = "1.6"
+        commonsFileUploadVersion = "1.3.1"
 
         url = "https://github.com/rapidw/loader"
         vcsUrl = "${url}.git"
@@ -209,6 +210,7 @@ project(":master") {
         implementation "commons-io:commons-io:${commonsIoVersion}"
         implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
         implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+//        implementation "commons-fileupload:commons-fileupload:${commonsFileUploadVersion}"
 
         annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
