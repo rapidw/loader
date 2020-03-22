@@ -8,6 +8,7 @@ import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import io.rapidw.loader.common.utils.JarStreamClassLoader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -15,9 +16,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.ServiceLoader;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.jar.JarInputStream;
 
 @Component
@@ -25,6 +24,7 @@ import java.util.jar.JarInputStream;
 public class Supervisor {
 
     private volatile boolean running;
+    private volatile boolean closed = false;
     private Agent agent;
     private final Reporter reporter;
     private final GrpcClient grpcClient;
@@ -36,7 +36,10 @@ public class Supervisor {
 
     public Supervisor(SupervisorConfig supervisorConfig, MasterConfig masterConfig) {
         this.grpcClient = new GrpcClient(supervisorConfig, masterConfig, this);
-        this.executorService = Executors.newScheduledThreadPool(1);
+        this.executorService = Executors.newScheduledThreadPool(1, new BasicThreadFactory.Builder()
+            .namingPattern("workerthread-%d")
+            .daemon(true)
+            .build());
         this.reporter = new Reporter(this.grpcClient, this.executorService);
         this.supervisorConfig = supervisorConfig;
     }
@@ -53,7 +56,7 @@ public class Supervisor {
         this.agent = ServiceLoader.load(Agent.class, classLoader).iterator().next();
     }
 
-    public void config(LoaderServiceOuterClass.SupervisorConfigReq supervisorConfigReq) {
+    public void config(LoaderServiceOuterClass.SupervisorConfig supervisorConfigReq) {
         if (supervisorConfigReq.getRpsLimit() != 0) {
             this.rateLimiter = RateLimiter.create(supervisorConfigReq.getRpsLimit());
         }
@@ -66,6 +69,7 @@ public class Supervisor {
     }
 
     public void start() {
+        log.debug("first round start");
         this.reporter.start();
         if (this.durationLimit > 0) {
             this.executorService.schedule(() -> {
@@ -78,18 +82,27 @@ public class Supervisor {
 
         this.running = true;
         while (this.perAgentTotalLimit > 0 && this.running) {
+            log.debug("per agent: {}", this.perAgentTotalLimit);
             if (this.rateLimiter != null) {
                 this.rateLimiter.acquire();
             }
-            this.roundStart();
+            roundStart();
             this.perAgentTotalLimit--;
         }
-        stop();
+        close();
     }
 
-    public void stop() {
-        this.agent.stop();
-        this.reporter.stop();
+    @SneakyThrows
+    public void close() {
+
+        log.debug("require stop");
+        CountDownLatch latch = new CountDownLatch(2);
+        this.agent.stop(latch::countDown);
+        this.reporter.stop(latch::countDown);
+        log.debug("wait agent and reporter stop");
+        latch.await();
+        log.debug("agent and reporter stopped");
+
     }
 
     public void roundStart() {

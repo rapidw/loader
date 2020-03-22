@@ -39,28 +39,10 @@ public class GrpcService extends LoaderServiceGrpc.LoaderServiceImplBase {
             public void onNext(LoaderServiceOuterClass.SupervisorMessage supervisorMessage) {
                 SocketAddress address = GrpcInterceptor.ADDRESS_KEY.get(Context.current());
                 switch (supervisorMessage.getMessageOneofCase()) {
-                    case REGISTER_REQ:
-                        String path = supervisorMessage.getRegisterReq().getPath();
+                    case REGISTER:
+                        String path = supervisorMessage.getRegister().getPath();
                         log.info("registering new agent: {}:{}", address, path);
                         supervisorService.addSupervisor(address, path, responseObserver);
-//                        agentService.printAgentList();
-                        responseObserver.onNext(
-                                LoaderServiceOuterClass.MasterMessage.newBuilder()
-                                        .setRegisterResp(LoaderServiceOuterClass.RegisterResp.newBuilder()
-                                                .build())
-                                        .build());
-                        break;
-                    case SUPERVISOR_CONFIG_RESP:
-                        log.info("supervisor config resp: {}", address);
-                        onSupervisorConfigResp(supervisorMessage);
-                        break;
-                    case AGENT_CONFIG_RESP:
-                        log.info("agent config resp: {}", address);
-                        onAgentConfigResp(supervisorMessage);
-                        break;
-                    case LOAD_RESP:
-                        log.info("load resp: {}", address);
-                        onLoadResp(supervisorMessage);
                         break;
                     case REPORTS:
                         log.info("reports: {}", address);
@@ -76,13 +58,16 @@ public class GrpcService extends LoaderServiceGrpc.LoaderServiceImplBase {
             public void onError(Throwable throwable) {
                 SocketAddress address = GrpcInterceptor.ADDRESS_KEY.get(Context.current());
                 log.info("error supervisor at {}", address);
-
                 supervisorService.removeSupervisor(address);
+                responseObserver.onCompleted();
             }
 
             @Override
             public void onCompleted() {
-                log.info("onCompleted");
+                SocketAddress address = GrpcInterceptor.ADDRESS_KEY.get(Context.current());
+                log.info("onCompleted: {}", address);
+                supervisorService.removeSupervisor(address);
+                responseObserver.onCompleted();
             }
         };
     }

@@ -15,9 +15,6 @@ public interface Agent {
      */
     void roundStart(RoundReporter roundReporter);
 
-    /**
-     * 停止所有测试
-     */
     void stop(StopCallback stopCallback);
 
     /**

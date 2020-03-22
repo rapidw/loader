@@ -1,7 +1,9 @@
 package io.rapidw.loader.supervisor;
 
+import io.rapidw.loader.api.StopCallback;
 import io.rapidw.loader.common.gen.LoaderServiceOuterClass;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
@@ -19,6 +21,7 @@ public class Reporter {
     private final GrpcClient grpcClient;
     private final ScheduledExecutorService executorService;
     private ScheduledFuture future;
+    private StopCallback stopCallback;
 
     private LinkedTransferQueue<LoaderServiceOuterClass.Report> reports = new LinkedTransferQueue<>();
 
@@ -36,14 +39,18 @@ public class Reporter {
         this.future = this.executorService.scheduleAtFixedRate(this::reportTask, 0, 3, TimeUnit.SECONDS);
     }
 
-    public void stop() {
-        log.debug("reporter stop");
-        reportTask();
-        this.future.cancel(false);
+    @SneakyThrows
+    public void stop(StopCallback stopCallback) {
+        log.debug("reporter stop received");
+        this.stopCallback = stopCallback;
+//        reportTask();
+        if (perAgentTotalCount == 0) {
+            this.future.cancel(false);
+        }
     }
 
     public void report(LoaderServiceOuterClass.Report report) {
-        log.debug("new report");
+        log.debug("new report received");
         if (perAgentTotalCount > 0) {
             perAgentTotalCount--;
         }
@@ -52,10 +59,13 @@ public class Reporter {
 
     public void reportTask() {
         if (reports.size() > 0) {
-            log.debug("report size: {}", reports.size());
+            log.debug("reportTask: report size: {}", reports.size());
             List<LoaderServiceOuterClass.Report> reportList = new LinkedList<>();
             reports.drainTo(reportList);
             grpcClient.sendReport(reportList);
+        }
+        if (perAgentTotalCount == 0) {
+            stopCallback.stopped();
         }
     }
 }

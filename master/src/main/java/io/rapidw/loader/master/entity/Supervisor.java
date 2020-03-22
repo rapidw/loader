@@ -31,7 +31,7 @@ public class Supervisor {
 
     public void loadAgent(byte[] data) {
         responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-            .setLoadReq(LoaderServiceOuterClass.LoadReq.newBuilder()
+            .setLoad(LoaderServiceOuterClass.Load.newBuilder()
                 .setData(ByteString.copyFrom(data))
                 .build())
             .build()
@@ -39,7 +39,7 @@ public class Supervisor {
     }
 
     public void configAgent(byte[] agentParamBytes, byte[] agentConfigBytes) {
-        LoaderServiceOuterClass.AgentConfigReq.Builder builder = LoaderServiceOuterClass.AgentConfigReq.newBuilder();
+        LoaderServiceOuterClass.AgentConfig.Builder builder = LoaderServiceOuterClass.AgentConfig.newBuilder();
         if (agentParamBytes != null) {
             builder.setAgentParamsBytes(ByteString.copyFrom(agentParamBytes));
         } else {
@@ -51,14 +51,14 @@ public class Supervisor {
             builder.setAgentConfigBytes(ByteString.EMPTY);
         }
         responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-            .setAgentConfigReq(builder.build())
+            .setAgentConfig(builder.build())
             .build()
         );
     }
 
     public void configSupervisor(int rpsLimit, int perAgentTotalLimit, int durationLimit) {
         responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-            .setSupervisorConfigReq(LoaderServiceOuterClass.SupervisorConfigReq.newBuilder()
+            .setSupervisorConfig(LoaderServiceOuterClass.SupervisorConfig.newBuilder()
                 .setRpsLimit(rpsLimit)
                 .setPerAgentTotalLimit(perAgentTotalLimit)
                 .setDurationLimit(durationLimit)
@@ -69,7 +69,7 @@ public class Supervisor {
 
     public void startAgent() {
         responseObserver.onNext(LoaderServiceOuterClass.MasterMessage.newBuilder()
-            .setStartReq(LoaderServiceOuterClass.StartReq.newBuilder()
+            .setStart(LoaderServiceOuterClass.Start.newBuilder()
                 .build())
             .build()
         );

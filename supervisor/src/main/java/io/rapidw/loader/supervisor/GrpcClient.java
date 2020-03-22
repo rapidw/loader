@@ -1,7 +1,7 @@
 package io.rapidw.loader.supervisor;
 
 
-import io.grpc.Channel;
+import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.rapidw.loader.common.gen.LoaderServiceGrpc;
@@ -18,6 +18,7 @@ public class GrpcClient {
     private final MasterConfig masterConfig;
     private StreamObserver<LoaderServiceOuterClass.SupervisorMessage> requestObserver;
     private final Supervisor supervisor;
+    private CountDownLatch finishLatch;
 
 
     public GrpcClient(SupervisorConfig supervisorConfig, MasterConfig masterConfig, Supervisor supervisor) {
@@ -27,9 +28,9 @@ public class GrpcClient {
     }
 
     public void start() throws Exception {
-        CountDownLatch finishLatch = new CountDownLatch(1);
+        finishLatch = new CountDownLatch(1);
 
-        Channel channel = ManagedChannelBuilder.forAddress(masterConfig.getHost(), masterConfig.getPort())
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(masterConfig.getHost(), masterConfig.getPort())
             .usePlaintext().build();
         LoaderServiceGrpc.LoaderServiceStub stub = LoaderServiceGrpc.newStub(channel);
         StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver = new StreamObserver<LoaderServiceOuterClass.MasterMessage>() {
@@ -38,45 +39,54 @@ public class GrpcClient {
                 onMasterMessage(masterMessage);
             }
 
+            // on error from master, close
             @Override
             public void onError(Throwable t) {
-                log.error("onError", t);
-                supervisor.stop();
-                finishLatch.countDown();
+                log.error("grpc connection error", t);
+                forceClose();
             }
 
+            // on completed from master, close
             @Override
             public void onCompleted() {
-                supervisor.stop();
-                log.info("master closed connection, exit");
-                finishLatch.countDown();
+                log.info("master closed grpc connection");
+                forceClose();
             }
         };
 
         requestObserver = stub.loaderChat(responseObserver);
-        // supervisor向master发送RegisterReq，注册
         log.info("registering to master {}:{}", masterConfig.getHost(), masterConfig.getPort());
         requestObserver.onNext(LoaderServiceOuterClass.SupervisorMessage.newBuilder().
-            setRegisterReq(LoaderServiceOuterClass.RegisterReq.newBuilder().setPath(supervisorConfig.getPath()).build()).build());
+            setRegister(LoaderServiceOuterClass.Register.newBuilder().setPath(supervisorConfig.getPath()).build()).build());
 
         finishLatch.await();
+        log.info("grpc client wait finished, close supervisor side");
+        requestObserver.onCompleted();
+        channel.shutdown();
+    }
+
+    private void forceClose() {
+        log.info("force close");
+        System.exit(0);
+    }
+
+    public void close() {
+        log.debug("release the latch");
+        finishLatch.countDown();
     }
 
     private void onMasterMessage(LoaderServiceOuterClass.MasterMessage masterMessage) {
         switch (masterMessage.getMessageOneofCase()) {
-            case REGISTER_RESP:
-                onRegisterResp();
+            case LOAD:
+                onLoadReq(masterMessage.getLoad());
                 break;
-            case LOAD_REQ:
-                onLoadReq(masterMessage.getLoadReq());
+            case SUPERVISOR_CONFIG:
+                onSupervisorConfigReq(masterMessage.getSupervisorConfig());
                 break;
-            case SUPERVISOR_CONFIG_REQ:
-                onSupervisorConfigReq(masterMessage.getSupervisorConfigReq());
+            case AGENT_CONFIG:
+                onAgentConfigReq(masterMessage.getAgentConfig());
                 break;
-            case AGENT_CONFIG_REQ:
-                onAgentConfigReq(masterMessage.getAgentConfigReq());
-                break;
-            case START_REQ:
+            case START:
                 onStartReq();
                 break;
         }
@@ -87,23 +97,23 @@ public class GrpcClient {
     }
 
     @SneakyThrows
-    private void onLoadReq(LoaderServiceOuterClass.LoadReq loadReq) {
+    private void onLoadReq(LoaderServiceOuterClass.Load loadReq) {
         log.info("loading agent");
         supervisor.loadAgent(loadReq.getData().toByteArray());
     }
 
-    private void onSupervisorConfigReq(LoaderServiceOuterClass.SupervisorConfigReq supervisorConfigReq) {
+    private void onSupervisorConfigReq(LoaderServiceOuterClass.SupervisorConfig supervisorConfig) {
         log.info("configuring supervisor");
-        supervisor.config(supervisorConfigReq);
+        supervisor.config(supervisorConfig);
     }
 
-    private void onAgentConfigReq(LoaderServiceOuterClass.AgentConfigReq agentConfigReq) {
+    private void onAgentConfigReq(LoaderServiceOuterClass.AgentConfig agentConfig) {
         log.info("configuring agent");
-        supervisor.configAgent(agentConfigReq.getAgentParamsBytes().toByteArray(), agentConfigReq.getAgentConfigBytes().toByteArray());
+        supervisor.configAgent(agentConfig.getAgentParamsBytes().toByteArray(), agentConfig.getAgentConfigBytes().toByteArray());
     }
 
     private void onStartReq() {
-        log.info("starting");
+        log.debug("startReq received");
         supervisor.start();
     }
 

@@ -9,29 +9,14 @@ service LoaderService {
 
 message SupervisorMessage {
     oneof message_oneof {
-        RegisterReq register_req = 1;
-        LoadResp load_resp = 2;
-        SupervisorConfigResp supervisor_config_resp = 3;
-        AgentConfigResp agent_config_resp = 4;
-        Reports reports = 5;
-        Log log = 6;
+        Register register = 1;
+        Reports reports = 2;
+        Log log = 3;
     }
 }
 
-message RegisterReq {
+message Register {
     string path = 1;
-}
-
-message LoadResp {
-
-}
-
-message SupervisorConfigResp {
-
-}
-
-message AgentConfigResp {
-
 }
 
 message Reports {
@@ -57,33 +42,28 @@ message Log {
 
 message MasterMessage {
     oneof message_oneof {
-        RegisterResp register_resp = 1;
-        LoadReq load_req = 2;
-        SupervisorConfigReq supervisor_config_req = 3;
-        AgentConfigReq agent_config_req = 4;
-        StartReq start_req = 5;
+        Load load = 1;
+        SupervisorConfig supervisor_config = 2;
+        AgentConfig agent_config = 3;
+        Start start = 4;
     }
 }
 
-message RegisterResp {
-
-}
-
-message LoadReq {
+message Load {
     bytes data = 1;
 }
 
-message SupervisorConfigReq {
+message SupervisorConfig {
     int32 per_agent_total_limit = 1;
     int32 duration_limit = 2; //second
     int32 rps_limit = 3;
 }
 
-message AgentConfigReq {
+message AgentConfig {
     bytes agentParamsBytes = 1;
     bytes agentConfigBytes = 2;
 }
 
-message StartReq {
+message Start {
 
 }

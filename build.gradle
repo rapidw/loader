@@ -31,8 +31,8 @@ subprojects {
     ext {
         slf4jVersion = '1.7.30'
         logbackVersion = '1.2.3'
-        grpcVersion = '1.27.1'
-        guavaVersion = '28.1-jre'
+        grpcVersion = '1.28.0'
+        guavaVersion = '28.2-jre'
         commonsLangVersion = '3.9'
         commonsMathVersion = '3.6.1'
         commonsIoVersion = '2.6'
@@ -79,7 +79,7 @@ project(":common") {
         }
         plugins {
             grpc {
-                artifact = 'io.grpc:protoc-gen-grpc-java:1.27.1'
+                artifact = 'io.grpc:protoc-gen-grpc-java:1.28.0'
             }
         }
 
