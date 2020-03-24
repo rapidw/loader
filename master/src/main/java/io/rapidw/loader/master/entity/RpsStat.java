@@ -1,11 +1,11 @@
-package io.rapidw.loader.master.response;
+package io.rapidw.loader.master.entity;
 
 import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public class ReportStat {
+public class RpsStat {
 
     private AtomicInteger totalCount = new AtomicInteger();
     private AtomicInteger successCount = new AtomicInteger();

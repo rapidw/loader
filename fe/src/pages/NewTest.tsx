@@ -106,7 +106,7 @@ const SupervisorTransfer: React.FC<SupervisorTransferProps> = ({ value = [], onC
     formatResult: response => {
       const data: TransferItem[] = [];
 
-      response.data.data.forEach((v: any) => {
+      response.data.list.forEach((v: any) => {
         data.push({
           key: v.id,
           title: `${v.host}:${v.path}`,

@@ -30,7 +30,7 @@ public class GrpcClient {
     public void start() throws Exception {
         finishLatch = new CountDownLatch(1);
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(masterConfig.getHost(), masterConfig.getPort())
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(masterConfig.getHost(), masterConfig.getPort()).maxInboundMessageSize(5000000)
             .usePlaintext().build();
         LoaderServiceGrpc.LoaderServiceStub stub = LoaderServiceGrpc.newStub(channel);
         StreamObserver<LoaderServiceOuterClass.MasterMessage> responseObserver = new StreamObserver<LoaderServiceOuterClass.MasterMessage>() {
@@ -62,7 +62,6 @@ public class GrpcClient {
         finishLatch.await();
         log.info("grpc client wait finished, close supervisor side");
         requestObserver.onCompleted();
-        channel.shutdown();
     }
 
     private void forceClose() {
@@ -71,7 +70,7 @@ public class GrpcClient {
     }
 
     public void close() {
-        log.debug("release the latch");
+        log.debug("closing, release the latch");
         finishLatch.countDown();
     }
 
@@ -89,11 +88,9 @@ public class GrpcClient {
             case START:
                 onStartReq();
                 break;
+            case BYE:
+                close();
         }
-    }
-
-    private void onRegisterResp() {
-        log.info("register success");
     }
 
     @SneakyThrows
@@ -122,6 +119,13 @@ public class GrpcClient {
             .setReports(LoaderServiceOuterClass.Reports.newBuilder()
                 .addAllReport(reports)
                 .build())
+            .build()
+        );
+    }
+
+    public void sendComplete() {
+        this.requestObserver.onNext(LoaderServiceOuterClass.SupervisorMessage.newBuilder()
+            .setComplete(LoaderServiceOuterClass.Complete.newBuilder().build())
             .build()
         );
     }

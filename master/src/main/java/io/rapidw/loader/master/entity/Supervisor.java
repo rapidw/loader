@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Builder
@@ -38,10 +39,10 @@ public class Supervisor {
         );
     }
 
-    public void configAgent(byte[] agentParamBytes, byte[] agentConfigBytes) {
+    public void configAgent(String agentParam, byte[] agentConfigBytes) {
         LoaderServiceOuterClass.AgentConfig.Builder builder = LoaderServiceOuterClass.AgentConfig.newBuilder();
-        if (agentParamBytes != null) {
-            builder.setAgentParamsBytes(ByteString.copyFrom(agentParamBytes));
+        if (agentParam != null) {
+            builder.setAgentParamsBytes(ByteString.copyFrom(agentParam.getBytes(StandardCharsets.UTF_8)));
         } else {
             builder.setAgentParamsBytes(ByteString.EMPTY);
         }

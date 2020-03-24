@@ -36,7 +36,7 @@ public final class PagedResponse<T> extends BaseResponse {
     @Builder
     public static class PagedData<T> {
 
-        private List<T> data;
+        private List<T> list;
 
         /**
          * 分页属性

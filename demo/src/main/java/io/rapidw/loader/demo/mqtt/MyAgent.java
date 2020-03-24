@@ -1,4 +1,4 @@
-package io.rapidw.loader.demo;
+package io.rapidw.loader.demo.mqtt;
 
 import io.rapidw.loader.api.*;
 import lombok.SneakyThrows;

@@ -10,7 +10,7 @@ import java.time.Instant;
 public class Report {
     public enum Type {
         SUCCESS,
-        FAILED,
+        ERROR,
         TIMEOUT,
         FINISH
     }

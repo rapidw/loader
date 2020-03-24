@@ -6,3 +6,4 @@ include 'supervisor'
 include 'api'
 include 'fe'
 include 'demo'
+include "http-demo"

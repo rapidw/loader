@@ -12,6 +12,7 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class Reporter {
@@ -22,6 +23,7 @@ public class Reporter {
     private final ScheduledExecutorService executorService;
     private ScheduledFuture future;
     private StopCallback stopCallback;
+    private AtomicInteger reportCount = new AtomicInteger();
 
     private LinkedTransferQueue<LoaderServiceOuterClass.Report> reports = new LinkedTransferQueue<>();
 
@@ -59,9 +61,9 @@ public class Reporter {
 
     public void reportTask() {
         if (reports.size() > 0) {
-            log.debug("reportTask: report size: {}", reports.size());
             List<LoaderServiceOuterClass.Report> reportList = new LinkedList<>();
             reports.drainTo(reportList);
+            log.debug("reportTask: report size: {}, {}", reportList.size(), reportCount.addAndGet(reportList.size()));
             grpcClient.sendReport(reportList);
         }
         if (perAgentTotalCount == 0) {

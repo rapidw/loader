@@ -108,21 +108,21 @@ const SupervisorList: React.FC = () => {
   ];
 
   const supervisorListRequest = useRequest(({current, pageSize, sorter: s, filters: f}) => {
-    const p: any = {current, pageSize};
-    if (s?.field && s?.order) {
-      p[s.field] = s.order;
-    }
-    if (f) {
-      Object.entries(f).forEach(([filed, value]) => {
-        p[filed] = value;
-      });
-    }
+    // const p: any = {current, pageSize};
+    // if (s?.field && s?.order) {
+    //   p[s.field] = s.order;
+    // }
+    // if (f) {
+    //   Object.entries(f).forEach(([filed, value]) => {
+    //     p[filed] = value;
+    //   });
+    // }
     // console.log(p);
     return request.get('/api/supervisors')
       .then(response => {
         return {
           total: response.data.total,
-          list: response.data.data
+          list: response.data.list
         }
       })
       ;

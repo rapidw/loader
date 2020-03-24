@@ -1,13 +1,9 @@
-package io.rapidw.loader.master.entity;
-
-import lombok.Data;
+package io.rapidw.loader.master.response;
 
 import java.time.Instant;
 import java.util.List;
 
-@Data
-public class Testing {
-
+public class TestingResponse {
     private String strategyParams;
     private String agentParams;
     private List<Integer> occupiedSupervisors;
@@ -16,19 +12,16 @@ public class Testing {
     private int durationLimit;
     private int perAgentTotalLimit;
 
-    private byte[] jarBytes;
-
     private boolean running;
     private Instant startTime;
     private Instant finishTime;
 
     private int rpsMax;
     private int rpsMin;
-    private int rpsAvg;
+    private int rpsMean;
     private int rpsP99;
     private int responseTimeMax;
     private int responseTimeMin;
-    private int responseTimeAvg;
+    private int responseTimeMean;
     private int responseTimeP99;
-
 }

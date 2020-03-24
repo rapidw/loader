@@ -27,21 +27,17 @@ public class TestingController {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping(value = "testing")
+    @PostMapping(value = "/testing")
     public BaseResponse start(@Valid @RequestPart("config") TestingConfigRequest testingConfigRequest,
                               @RequestPart(name = "strategyParams", required = false) String strategyParams,
-                              @RequestPart(name = "agentParams", required = false) MultipartFile agentParams,
+                              @RequestPart(name = "agentParams", required = false) String agentParams,
                               @RequestPart("jar") MultipartFile jar) throws IOException {
 
-        byte[] agentParamsBytes = null;
-        if (agentParams != null) {
-            agentParamsBytes = agentParams.getBytes();
-        }
-        testingService.start(testingConfigRequest, strategyParams, agentParamsBytes, jar.getBytes());
+        testingService.start(testingConfigRequest, strategyParams, agentParams, jar.getBytes());
         return BaseResponse.SUCCESS;
     }
 
-    @GetMapping
+    @GetMapping("/testing")
     public DataResponse<Testing> get() {
         return DataResponse.of(testingService.get());
     }

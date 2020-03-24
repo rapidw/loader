@@ -1,6 +1,5 @@
 package io.rapidw.loader.supervisor;
 
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.protobuf.Timestamp;
 import io.rapidw.loader.api.Agent;
 import io.rapidw.loader.api.RoundReporter;
@@ -31,8 +30,9 @@ public class Supervisor {
     private final SupervisorConfig supervisorConfig;
     private int perAgentTotalLimit;
     private int durationLimit;
-    private RateLimiter rateLimiter;
+//    private RateLimiter rateLimiter;
     private ScheduledExecutorService executorService;
+    private Semaphore semaphore;
 
     public Supervisor(SupervisorConfig supervisorConfig, MasterConfig masterConfig) {
         this.grpcClient = new GrpcClient(supervisorConfig, masterConfig, this);
@@ -58,7 +58,8 @@ public class Supervisor {
 
     public void config(LoaderServiceOuterClass.SupervisorConfig supervisorConfigReq) {
         if (supervisorConfigReq.getRpsLimit() != 0) {
-            this.rateLimiter = RateLimiter.create(supervisorConfigReq.getRpsLimit());
+//            this.rateLimiter = RateLimiter.create(supervisorConfigReq.getRpsLimit());
+            this.semaphore = new Semaphore(supervisorConfigReq.getRpsLimit());
         }
         this.perAgentTotalLimit = supervisorConfigReq.getPerAgentTotalLimit();
         this.durationLimit = supervisorConfigReq.getDurationLimit();
@@ -68,6 +69,7 @@ public class Supervisor {
         agent.config(agentParamsBytes, agentConfigBytes);
     }
 
+    @SneakyThrows
     public void start() {
         log.debug("first round start");
         this.reporter.start();
@@ -83,8 +85,12 @@ public class Supervisor {
         this.running = true;
         while (this.perAgentTotalLimit > 0 && this.running) {
             log.debug("per agent: {}", this.perAgentTotalLimit);
-            if (this.rateLimiter != null) {
-                this.rateLimiter.acquire();
+//            if (this.rateLimiter != null) {
+//                log.debug("rate limited");
+//                this.rateLimiter.acquire();
+//            }
+            if (this.semaphore != null) {
+                this.semaphore.acquire();
             }
             roundStart();
             this.perAgentTotalLimit--;
@@ -103,11 +109,19 @@ public class Supervisor {
         latch.await();
         log.debug("agent and reporter stopped");
 
+        grpcClient.sendComplete();
     }
 
     public void roundStart() {
         agent.roundStart(new RoundReporter() {
             private Instant startTime = Instant.now();
+
+            @Override
+            public void success(Instant startTime) {
+                this.startTime = startTime;
+                success();
+            }
+
             @Override
             public void success() {
                 log.info("agent round success");
@@ -124,22 +138,33 @@ public class Supervisor {
                     .setStatus(LoaderServiceOuterClass.Report.Status.SUCCESS)
                     .build()
                 );
+                semaphore.release();
             }
 
             @Override
             public void error() {
-                log.info("agent round error");
+                log.info("supervisor round error recv");
                 reporter.report(LoaderServiceOuterClass.Report.newBuilder()
+                    .setStartTime(Timestamp.newBuilder()
+                        .setSeconds(startTime.getEpochSecond())
+                        .setNanos(startTime.getNano())
+                        .build())
                     .setStatus(LoaderServiceOuterClass.Report.Status.ERROR)
                     .build());
+                semaphore.release();
             }
 
             @Override
             public void timeout() {
-                log.info("agent round timeout");
+                log.info("supervisor round timeout recv");
                 reporter.report(LoaderServiceOuterClass.Report.newBuilder()
+                    .setStartTime(Timestamp.newBuilder()
+                        .setSeconds(startTime.getEpochSecond())
+                        .setNanos(startTime.getNano())
+                        .build())
                     .setStatus(LoaderServiceOuterClass.Report.Status.TIMEOUT)
                     .build());
+                semaphore.release();
             }
         });
 

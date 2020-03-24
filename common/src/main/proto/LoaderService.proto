@@ -11,7 +11,7 @@ message SupervisorMessage {
     oneof message_oneof {
         Register register = 1;
         Reports reports = 2;
-        Log log = 3;
+        Complete complete = 3;
     }
 }
 
@@ -34,7 +34,8 @@ message Report {
     Status status = 3;
 }
 
-message Log {
+
+message Complete {
 
 }
 
@@ -46,6 +47,7 @@ message MasterMessage {
         SupervisorConfig supervisor_config = 2;
         AgentConfig agent_config = 3;
         Start start = 4;
+        Bye bye = 5;
     }
 }
 
@@ -65,5 +67,9 @@ message AgentConfig {
 }
 
 message Start {
+
+}
+
+message Bye {
 
 }

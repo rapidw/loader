@@ -112,14 +112,14 @@ public class SupervisorService {
         this.supervisorsInUse.forEach(supervisor -> supervisor.configSupervisor(qpsLimit, perAgentTotalLimit, durationLimit));
     }
 
-    public void configAgent(byte[] agentParamsBytes, List<byte[]> agentConfigBytesList) {
+    public void configAgent(String agentParams, List<byte[]> agentConfigBytesList) {
         if (agentConfigBytesList != null && agentConfigBytesList.size() == this.supervisorsInUse.size()) {
             for (int i = 0; i < supervisorsInUse.size(); i++) {
-                supervisorsInUse.get(i).configAgent(agentParamsBytes, agentConfigBytesList.get(i));
+                supervisorsInUse.get(i).configAgent(agentParams, agentConfigBytesList.get(i));
             }
         } else {
             for (Supervisor supervisor : supervisorsInUse) {
-                supervisor.configAgent(agentParamsBytes, null);
+                supervisor.configAgent(agentParams, null);
             }
         }
     }
@@ -146,7 +146,7 @@ public class SupervisorService {
 
         }
         return PagedResponse.PagedData.<SupervisorInfo>builder()
-            .data(supervisorInfoList)
+            .list(supervisorInfoList)
             .pageNum(1)
             .pageSize(20)
             .total(supervisorInfoList.size()).build();
